@@ -30,7 +30,7 @@ export function createVoiceInput(opts?: Opts) {
   let ctx: AudioContext | undefined
   let raf: number | undefined
   let analyser: AnalyserNode | undefined
-  let data: Uint8Array | undefined
+  let data: Uint8Array<ArrayBuffer> | undefined
 
   const supported = () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
 
@@ -73,16 +73,17 @@ export function createVoiceInput(opts?: Opts) {
     setStore("error", "")
     setStore("peak", 0)
 
-    stream = await navigator.mediaDevices
+    const next = await navigator.mediaDevices
       .getUserMedia({
         audio: voiceConstraints(opts?.device?.()),
       })
-      .catch((err) => {
+      .catch((err): undefined => {
         setStore("error", err instanceof Error ? err.message : String(err))
-        return
+        return undefined
       })
 
-    if (!stream) return false
+    if (!next) return false
+    stream = next
     if (typeof window === "undefined" || !window.AudioContext) {
       setStore("error", "unsupported")
       await stop()
@@ -92,7 +93,7 @@ export function createVoiceInput(opts?: Opts) {
     ctx = new window.AudioContext()
     analyser = ctx.createAnalyser()
     analyser.fftSize = 2048
-    data = new Uint8Array(analyser.frequencyBinCount)
+    data = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount))
     ctx.createMediaStreamSource(stream).connect(analyser)
     setStore("running", true)
     sample()
