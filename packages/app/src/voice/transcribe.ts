@@ -13,7 +13,8 @@ export async function transcribeVoice(input: {
   audio: Blob
   language?: string
 }) {
-  const audio = Buffer.from(await input.audio.arrayBuffer()).toString("base64")
+  const bytes = new Uint8Array(await input.audio.arrayBuffer())
+  const audio = btoa(String.fromCharCode(...bytes))
   const res = await fetch(`${input.server.url.replace(/\/$/, "")}/voice/transcribe`, {
     method: "POST",
     headers: headers(input.server),
