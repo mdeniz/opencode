@@ -60,6 +60,7 @@ import { showToast } from "@opencode-ai/ui/toast"
 import { createSpeechRecognition } from "@/utils/speech"
 import { createVoicePlayer } from "@/voice/tts"
 import { assistantVoiceText } from "@/voice/text"
+import { createVoiceInput } from "@/voice/input"
 
 interface PromptInputProps {
   class?: string
@@ -1001,6 +1002,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   })
 
   const player = createVoicePlayer({ lang: language.intl })
+  const input = createVoiceInput({ device: settings.voice.input })
   const speech = createSpeechRecognition({
     lang: language.intl(),
     onFinal: (text) => {
@@ -1032,6 +1034,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const stopVoice = () => {
     speech.stop()
+    void input.stop()
     if (!settings.voice.autoSend() || store.voiceAdded === 0) return
     queueMicrotask(() => {
       void handleSubmit({ preventDefault: () => undefined } as Event)
@@ -1048,6 +1051,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceAdded", 0)
     setStore("voiceDraft", "")
     editorRef.focus()
+    void input.start()
     speech.start()
   }
 
@@ -1066,6 +1070,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   createEffect(() => {
     if (settings.voice.enabled()) return
     if (speech.isRecording()) speech.stop()
+    if (input.running()) void input.stop()
     if (player.speaking()) player.stop()
     if (store.voiceDraft) setStore("voiceDraft", "")
   })
@@ -1079,6 +1084,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceDraft", "")
     player.stop()
     if (speech.isRecording()) speech.stop()
+    if (input.running()) void input.stop()
   })
 
   createEffect(() => {
@@ -1359,6 +1365,17 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     ? language.t("prompt.voice.status.processing")
                     : language.t("prompt.voice.status.ready")}
             </span>
+            <Show when={speech.isRecording()}>
+              <div class="ml-auto flex items-center gap-2 min-w-28">
+                <div class="h-1.5 flex-1 rounded-full bg-surface border border-border overflow-hidden">
+                  <div
+                    class="h-full bg-success transition-all duration-75"
+                    style={{ width: `${Math.max(2, Math.min(100, input.level() * 220))}%` }}
+                  />
+                </div>
+                <span class="w-10 text-right">{input.level().toFixed(3)}</span>
+              </div>
+            </Show>
           </div>
         </Show>
         <div
