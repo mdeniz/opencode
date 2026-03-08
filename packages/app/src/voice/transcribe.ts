@@ -14,7 +14,12 @@ export async function transcribeVoice(input: {
   language?: string
 }) {
   const bytes = new Uint8Array(await input.audio.arrayBuffer())
-  const audio = btoa(String.fromCharCode(...bytes))
+  let binary = ""
+  const size = 0x8000
+  for (let i = 0; i < bytes.length; i += size) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + size))
+  }
+  const audio = btoa(binary)
   const res = await fetch(`${input.server.url.replace(/\/$/, "")}/voice/transcribe`, {
     method: "POST",
     headers: headers(input.server),
@@ -27,6 +32,7 @@ export async function transcribeVoice(input: {
 
   if (!res.ok) {
     const err = await res.json().catch(() => undefined)
+    console.error("voice transcribe failed", err)
     throw new Error(formatServerError(err ?? new Error(res.statusText)))
   }
 

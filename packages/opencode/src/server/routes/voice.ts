@@ -25,7 +25,7 @@ const Resp = z
   .meta({ ref: "VoiceTranscribeResponse" })
 
 async function resolve() {
-  const cfg = await Config.getGlobal()
+  const cfg = await Config.get()
   const providers = await Provider.list()
   const ids = [cfg.provider?.openai ? "openai" : undefined, cfg.provider?.opencode ? "opencode" : undefined, ...Object.keys(providers)].filter(
     (x): x is string => !!x,
@@ -65,7 +65,19 @@ export const VoiceRoutes = lazy(() =>
       const body = await c.req.json().then((x) => Body.parse(x))
       const found = await resolve()
       if (!found) {
-        return c.json({ data: null, errors: [{ message: "No audio transcription provider configured" }], success: false }, 400)
+        const auth = await Auth.all()
+        return c.json(
+          {
+            data: null,
+            errors: [
+              {
+                message: `No audio transcription provider configured. Connected auth providers: ${Object.keys(auth).join(", ") || "none"}`,
+              },
+            ],
+            success: false,
+          },
+          400,
+        )
       }
 
       const url = String(found.info.options.baseURL ?? found.model.api.url ?? "https://api.openai.com/v1").replace(/\/$/, "")
