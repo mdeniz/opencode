@@ -37,6 +37,7 @@ Those can build on top of the app experience later.
 - Raw audio capture now honors the selected microphone with `getUserMedia({ audio: { deviceId } })` when the browser supports it.
 - Dictation no longer depends on the browser Web Speech API. The app now records microphone audio with `MediaRecorder`, sends it to OpenCode server-side transcription, and inserts the returned text.
 - This matches the article's main architectural idea: own the audio pipeline, batch recorded chunks, transcribe server-side, and keep browser APIs only for capture/playback.
+- The current implementation also starts the VAD-style groundwork from the article: raw audio level tracking, silence-based auto-stop, and selected-device capture reused across settings and composer voice mode.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
 - Browser speech recognition APIs do not expose a standard way to bind recognition to a specific microphone, so the microphone picker is currently advisory only.
 - Browser speech synthesis also does not provide reliable speaker routing. True output routing would require an `HTMLAudioElement.setSinkId()` pipeline or desktop-native support.

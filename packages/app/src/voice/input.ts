@@ -3,6 +3,8 @@ import { createStore } from "solid-js/store"
 
 type Opts = {
   device?: Accessor<string | undefined>
+  onSilence?: (peak: number) => void
+  silence?: Accessor<number | undefined>
 }
 
 export function preferredMime() {
@@ -39,6 +41,7 @@ export function createVoiceInput(opts?: Opts) {
   let data: Uint8Array<ArrayBuffer> | undefined
   let rec: MediaRecorder | undefined
   let chunks: Blob[] = []
+  let silence: number | undefined
 
   const supported = () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
 
@@ -51,6 +54,7 @@ export function createVoiceInput(opts?: Opts) {
     data = undefined
     rec = undefined
     chunks = []
+    silence = undefined
     const audio = ctx
     ctx = undefined
     await audio?.close().catch(() => undefined)
@@ -70,6 +74,14 @@ export function createVoiceInput(opts?: Opts) {
     }
     setStore("level", Math.sqrt(sum / data.length))
     setStore("peak", peak)
+    const quiet = Math.sqrt(sum / data.length) < 0.015
+    if (quiet && opts?.onSilence && opts?.silence?.()) {
+      if (!silence) silence = window.setTimeout(() => opts.onSilence?.(store.peak), opts.silence?.())
+    }
+    if (!quiet && silence) {
+      clearTimeout(silence)
+      silence = undefined
+    }
     raf = requestAnimationFrame(sample)
   }
 

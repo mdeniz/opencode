@@ -500,6 +500,36 @@ export const SettingsGeneral: Component = () => {
           </div>
         </SettingsRow>
 
+        <SettingsRow
+          title={language.t("settings.general.voice.autoStop.title")}
+          description={language.t("settings.general.voice.autoStop.description")}
+        >
+          <div data-action="settings-voice-auto-stop">
+            <Switch checked={settings.voice.autoStop()} onChange={(checked) => settings.voice.setAutoStop(checked)} />
+          </div>
+        </SettingsRow>
+
+        <Show when={settings.voice.autoStop()}>
+          <SettingsRow
+            title={language.t("settings.general.voice.silence.title")}
+            description={language.t("settings.general.voice.silence.description")}
+          >
+            <Select
+              data-action="settings-voice-silence"
+              options={[500, 1000, 1500, 2000, 2500].map((value) => ({ value, label: `${value}ms` }))}
+              current={[500, 1000, 1500, 2000, 2500]
+                .map((value) => ({ value, label: `${value}ms` }))
+                .find((item) => item.value === settings.voice.silenceMs())}
+              value={(item) => String(item.value)}
+              label={(item) => item.label}
+              onSelect={(item) => item && settings.voice.setSilenceMs(item.value)}
+              variant="secondary"
+              size="small"
+              triggerVariant="settings"
+            />
+          </SettingsRow>
+        </Show>
+
         <Show when={voice.supported()}>
           <SettingsRow
             title={language.t("settings.general.voice.input.title")}

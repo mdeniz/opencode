@@ -45,6 +45,8 @@ export interface Settings {
     autoSpeak: boolean
     input: string
     output: string
+    autoStop: boolean
+    silenceMs: number
   }
 }
 
@@ -86,6 +88,8 @@ const defaultSettings: Settings = {
     autoSpeak: true,
     input: "default",
     output: "default",
+    autoStop: true,
+    silenceMs: 1500,
   },
 }
 
@@ -264,6 +268,14 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         output: withFallback(() => store.voice?.output, defaultSettings.voice.output),
         setOutput(value: string) {
           setStore("voice", "output", value)
+        },
+        autoStop: withFallback(() => store.voice?.autoStop, defaultSettings.voice.autoStop),
+        setAutoStop(value: boolean) {
+          setStore("voice", "autoStop", value)
+        },
+        silenceMs: withFallback(() => store.voice?.silenceMs, defaultSettings.voice.silenceMs),
+        setSilenceMs(value: number) {
+          setStore("voice", "silenceMs", value)
         },
       },
     }

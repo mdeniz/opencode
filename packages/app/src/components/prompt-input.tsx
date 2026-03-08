@@ -259,6 +259,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voiceSession?: string
     voiceDraft: string
     voiceBusy: boolean
+    voiceTick: number
   }>({
     popover: null,
     historyIndex: -1,
@@ -273,6 +274,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voiceSession: undefined,
     voiceDraft: "",
     voiceBusy: false,
+    voiceTick: 0,
   })
 
   const buttonsSpring = useSpring(() => (store.mode === "normal" ? 1 : 0), { visualDuration: 0.2, bounce: 0 })
@@ -1006,7 +1008,15 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   })
 
   const player = createVoicePlayer({ lang: language.intl })
-  const input = createVoiceInput({ device: settings.voice.input })
+  const input = createVoiceInput({
+    device: settings.voice.input,
+    silence: settings.voice.silenceMs,
+    onSilence: () => {
+      if (!settings.voice.autoStop() || !input.running() || store.voiceBusy) return
+      setStore("voiceTick", (value) => value + 1)
+      void stopVoice()
+    },
+  })
 
   const unsupportedVoice = () => {
     showToast({
@@ -1060,6 +1070,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     player.stop()
     setStore("voiceAdded", 0)
     setStore("voiceDraft", "")
+    setStore("voiceTick", (value) => value + 1)
     editorRef.focus()
     void input.start()
   }
