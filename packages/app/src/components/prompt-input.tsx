@@ -1340,6 +1340,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             {store.voiceDraft}
           </div>
         </Show>
+        <Show when={settings.voice.enabled()}>
+          <div class="px-3 pt-1.5 flex items-center gap-2 text-11-regular text-text-weak" data-action="prompt-voice-status">
+            <span
+              classList={{
+                "size-2 rounded-full bg-success": speech.isRecording(),
+                "size-2 rounded-full bg-warning": !speech.isRecording() && !!store.voiceDraft,
+                "size-2 rounded-full bg-info": !speech.isRecording() && player.speaking(),
+                "size-2 rounded-full bg-border": !speech.isRecording() && !store.voiceDraft && !player.speaking(),
+              }}
+            />
+            <span>
+              {speech.isRecording()
+                ? language.t("prompt.voice.status.listening")
+                : player.speaking()
+                  ? language.t("prompt.voice.status.speaking")
+                  : store.voiceDraft
+                    ? language.t("prompt.voice.status.processing")
+                    : language.t("prompt.voice.status.ready")}
+            </span>
+          </div>
+        </Show>
         <div
           class="relative"
           onMouseDown={(e) => {
