@@ -425,43 +425,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const shellModeKey = "mod+shift+x"
   const normalModeKey = "mod+shift+e"
 
-  command.register("prompt-input", () => [
-    {
-      id: "file.attach",
-      title: language.t("prompt.action.attachFile"),
-      category: language.t("command.category.file"),
-      keybind: "mod+u",
-      disabled: store.mode !== "normal",
-      onSelect: pick,
-    },
-    {
-      id: "prompt.mode.shell",
-      title: language.t("command.prompt.mode.shell"),
-      category: language.t("command.category.session"),
-      keybind: shellModeKey,
-      disabled: store.mode === "shell",
-      onSelect: () => setMode("shell"),
-    },
-    {
-      id: "prompt.mode.normal",
-      title: language.t("command.prompt.mode.normal"),
-      category: language.t("command.category.session"),
-      keybind: normalModeKey,
-      disabled: store.mode === "normal",
-      onSelect: () => setMode("normal"),
-    },
-    {
-      id: "voice.toggle",
-      title: speech.isRecording() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
-      description: language.t("command.voice.toggle.description"),
-      category: language.t("command.category.session"),
-      keybind: "mod+shift+v",
-      slash: "voice",
-      disabled: store.mode !== "normal" || working(),
-      onSelect: () => toggleVoice(),
-    },
-  ])
-
   const closePopover = () => setStore("popover", null)
 
   const resetHistoryNavigation = (force = false) => {
@@ -1100,6 +1063,43 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (speech.isRecording()) return
     player.speak(text)
   })
+
+  command.register("prompt-input", () => [
+    {
+      id: "file.attach",
+      title: language.t("prompt.action.attachFile"),
+      category: language.t("command.category.file"),
+      keybind: "mod+u",
+      disabled: store.mode !== "normal",
+      onSelect: pick,
+    },
+    {
+      id: "prompt.mode.shell",
+      title: language.t("command.prompt.mode.shell"),
+      category: language.t("command.category.session"),
+      keybind: shellModeKey,
+      disabled: store.mode === "shell",
+      onSelect: () => setMode("shell"),
+    },
+    {
+      id: "prompt.mode.normal",
+      title: language.t("command.prompt.mode.normal"),
+      category: language.t("command.category.session"),
+      keybind: normalModeKey,
+      disabled: store.mode === "normal",
+      onSelect: () => setMode("normal"),
+    },
+    {
+      id: "voice.toggle",
+      title: speech.isRecording() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
+      description: language.t("command.voice.toggle.description"),
+      category: language.t("command.category.session"),
+      keybind: "mod+shift+v",
+      slash: "voice",
+      disabled: store.mode !== "normal" || working(),
+      onSelect: toggleVoice,
+    },
+  ])
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "u") {
