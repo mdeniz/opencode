@@ -87,6 +87,9 @@ export const dict = {
   "command.session.share.description": "Share this session and copy the URL to clipboard",
   "command.session.unshare": "Unshare session",
   "command.session.unshare.description": "Stop sharing this session",
+  "command.voice.enable": "Enable voice mode",
+  "command.voice.disable": "Disable voice mode",
+  "command.voice.toggle.description": "Toggle microphone input and spoken replies",
 
   "palette.search.placeholder": "Search files, commands, and sessions",
   "palette.empty": "No results found",
@@ -626,6 +629,7 @@ export const dict = {
   "settings.general.section.notifications": "System notifications",
   "settings.general.section.updates": "Updates",
   "settings.general.section.sounds": "Sound effects",
+  "settings.general.section.voice": "Voice",
   "settings.general.section.feed": "Feed",
   "settings.general.section.display": "Display",
 
@@ -653,6 +657,12 @@ export const dict = {
 
   "settings.general.row.releaseNotes.title": "Release notes",
   "settings.general.row.releaseNotes.description": "Show What's New popups after updates",
+  "settings.general.voice.enabled.title": "Voice mode",
+  "settings.general.voice.enabled.description": "Enable the built-in /voice command, microphone control, and spoken replies",
+  "settings.general.voice.autoSend.title": "Auto-send dictated prompts",
+  "settings.general.voice.autoSend.description": "Send the transcript as soon as you stop recording",
+  "settings.general.voice.autoSpeak.title": "Read assistant replies aloud",
+  "settings.general.voice.autoSpeak.description": "Play completed assistant replies with the browser voice",
 
   "settings.updates.row.startup.title": "Check for updates on startup",
   "settings.updates.row.startup.description": "Automatically check for updates when OpenCode launches",
@@ -736,6 +746,10 @@ export const dict = {
   "settings.general.sounds.permissions.description": "Play sound when a permission is required",
   "settings.general.sounds.errors.title": "Errors",
   "settings.general.sounds.errors.description": "Play sound when an error occurs",
+  "toast.voice.enabled.title": "Voice mode enabled",
+  "toast.voice.enabled.description": "Use /voice or the microphone button to dictate prompts.",
+  "toast.voice.disabled.title": "Voice mode disabled",
+  "toast.voice.disabled.description": "Microphone input and spoken replies are turned off.",
 
   "settings.shortcuts.title": "Keyboard shortcuts",
   "settings.shortcuts.reset.button": "Reset to defaults",

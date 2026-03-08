@@ -56,6 +56,7 @@ export function createSpeechRecognition(opts?: {
   lang?: string
   onFinal?: (text: string) => void
   onInterim?: (text: string) => void
+  onError?: (error: string) => void
 }) {
   const ctor = getSpeechRecognitionCtor<Recognition>(typeof window === "undefined" ? undefined : window)
   const hasSupport = Boolean(ctor)
@@ -245,6 +246,7 @@ export function createSpeechRecognition(opts?: {
       }
       shouldContinue = false
       setStore("isRecording", false)
+      if (opts?.onError) opts.onError(e.error)
     }
 
     recognition.onstart = () => {
@@ -301,6 +303,11 @@ export function createSpeechRecognition(opts?: {
     } catch {}
   }
 
+  const setLang = (value: string) => {
+    if (!recognition) return
+    recognition.lang = value
+  }
+
   onCleanup(() => {
     shouldContinue = false
     clearRestart()
@@ -322,5 +329,6 @@ export function createSpeechRecognition(opts?: {
     interim,
     start,
     stop,
+    setLang,
   }
 }

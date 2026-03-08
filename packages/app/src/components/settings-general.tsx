@@ -412,6 +412,41 @@ export const SettingsGeneral: Component = () => {
     </div>
   )
 
+  const VoiceSection = () => (
+    <div class="flex flex-col gap-1">
+      <h3 class="text-14-medium text-text-strong pb-2">{language.t("settings.general.section.voice")}</h3>
+
+      <div class="bg-surface-raised-base px-4 rounded-lg">
+        <SettingsRow
+          title={language.t("settings.general.voice.enabled.title")}
+          description={language.t("settings.general.voice.enabled.description")}
+        >
+          <div data-action="settings-voice-enabled">
+            <Switch checked={settings.voice.enabled()} onChange={(checked) => settings.voice.setEnabled(checked)} />
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.voice.autoSend.title")}
+          description={language.t("settings.general.voice.autoSend.description")}
+        >
+          <div data-action="settings-voice-auto-send">
+            <Switch checked={settings.voice.autoSend()} onChange={(checked) => settings.voice.setAutoSend(checked)} />
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.voice.autoSpeak.title")}
+          description={language.t("settings.general.voice.autoSpeak.description")}
+        >
+          <div data-action="settings-voice-auto-speak">
+            <Switch checked={settings.voice.autoSpeak()} onChange={(checked) => settings.voice.setAutoSpeak(checked)} />
+          </div>
+        </SettingsRow>
+      </div>
+    </div>
+  )
+
   const UpdatesSection = () => (
     <div class="flex flex-col gap-1">
       <h3 class="text-14-medium text-text-strong pb-2">{language.t("settings.general.section.updates")}</h3>
@@ -472,6 +507,8 @@ export const SettingsGeneral: Component = () => {
         <NotificationsSection />
 
         <SoundsSection />
+
+        <VoiceSection />
 
         {/*<Show when={platform.platform === "desktop" && platform.os === "windows" && platform.getWslEnabled}>
           {(_) => {

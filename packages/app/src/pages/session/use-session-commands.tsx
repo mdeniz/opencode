@@ -9,6 +9,7 @@ import { useLocal } from "@/context/local"
 import { usePermission } from "@/context/permission"
 import { usePrompt } from "@/context/prompt"
 import { useSDK } from "@/context/sdk"
+import { useSettings } from "@/context/settings"
 import { useSync } from "@/context/sync"
 import { useTerminal } from "@/context/terminal"
 import { DialogSelectFile } from "@/components/dialog-select-file"
@@ -43,6 +44,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
   const permission = usePermission()
   const prompt = usePrompt()
   const sdk = useSDK()
+  const settings = useSettings()
   const sync = useSync()
   const terminal = useTerminal()
   const layout = useLayout()
@@ -297,6 +299,24 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     }),
   ])
 
+  const voiceCommands = createMemo(() => [
+    sessionCommand({
+      id: "voice.toggle",
+      title: settings.voice.enabled() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
+      description: language.t("command.voice.toggle.description"),
+      keybind: "mod+shift+v",
+      slash: "voice",
+      onSelect: () => {
+        const next = !settings.voice.enabled()
+        settings.voice.setEnabled(next)
+        showToast({
+          title: next ? language.t("toast.voice.enabled.title") : language.t("toast.voice.disabled.title"),
+          description: next ? language.t("toast.voice.enabled.description") : language.t("toast.voice.disabled.description"),
+        })
+      },
+    }),
+  ])
+
   const sessionActionCommands = createMemo(() => [
     sessionCommand({
       id: "session.undo",
@@ -498,6 +518,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       messageCommands(),
       agentCommands(),
       permissionCommands(),
+      voiceCommands(),
       sessionActionCommands(),
       shareCommands(),
     ].flatMap((x) => x),

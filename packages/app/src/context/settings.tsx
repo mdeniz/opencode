@@ -39,6 +39,11 @@ export interface Settings {
   }
   notifications: NotificationSettings
   sounds: SoundSettings
+  voice: {
+    enabled: boolean
+    autoSend: boolean
+    autoSpeak: boolean
+  }
 }
 
 const defaultSettings: Settings = {
@@ -72,6 +77,11 @@ const defaultSettings: Settings = {
     permissions: "staplebops-02",
     errorsEnabled: true,
     errors: "nope-03",
+  },
+  voice: {
+    enabled: false,
+    autoSend: false,
+    autoSpeak: true,
   },
 }
 
@@ -228,6 +238,20 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         errors: withFallback(() => store.sounds?.errors, defaultSettings.sounds.errors),
         setErrors(value: string) {
           setStore("sounds", "errors", value)
+        },
+      },
+      voice: {
+        enabled: withFallback(() => store.voice?.enabled, defaultSettings.voice.enabled),
+        setEnabled(value: boolean) {
+          setStore("voice", "enabled", value)
+        },
+        autoSend: withFallback(() => store.voice?.autoSend, defaultSettings.voice.autoSend),
+        setAutoSend(value: boolean) {
+          setStore("voice", "autoSend", value)
+        },
+        autoSpeak: withFallback(() => store.voice?.autoSpeak, defaultSettings.voice.autoSpeak),
+        setAutoSpeak(value: boolean) {
+          setStore("voice", "autoSpeak", value)
         },
       },
     }
