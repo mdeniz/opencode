@@ -12,7 +12,7 @@ import { usePlatform } from "@/context/platform"
 import { useSettings, monoFontFamily } from "@/context/settings"
 import { playSound, SOUND_OPTIONS } from "@/utils/sound"
 import { createVoiceDevices } from "@/voice/devices"
-import { testVoiceInput } from "@/voice/devices"
+import { createVoiceInput } from "@/voice/input"
 import { testVoiceOutput } from "@/voice/tts"
 import { Link } from "./link"
 
@@ -52,6 +52,7 @@ export const SettingsGeneral: Component = () => {
     voiceOutputTesting: false,
   })
   const voice = createVoiceDevices()
+  const input = createVoiceInput({ device: settings.voice.input })
 
   const linux = createMemo(() => platform.platform === "desktop" && platform.os === "linux")
 
@@ -284,34 +285,30 @@ export const SettingsGeneral: Component = () => {
 
   const testInput = async () => {
     setStore("voiceInputTesting", true)
-    const ok = await testVoiceInput({
-      onDone: (text) => {
-        showToast({
-          title: text === "0.000"
-            ? language.t("settings.general.voice.testInput.quiet.title")
-            : language.t("settings.general.voice.testInput.success.title"),
-          description:
-            text === "0.000"
-              ? language.t("settings.general.voice.testInput.quiet.description")
-              : language.t("settings.general.voice.testInput.success.description", { level: text }),
-          variant: text === "0.000" ? "default" : "success",
-        })
-      },
-      onError: (error) => {
-        showToast({
-          title: language.t("settings.general.voice.testInput.error.title"),
-          description: language.t("settings.general.voice.testInput.error.description", { error }),
-          variant: "error",
-        })
-      },
-    })
-    if (!ok) {
+    const peak = await input.test(2200)
+    if (peak === undefined) {
+      showToast({
+        title: language.t("settings.general.voice.testInput.error.title"),
+        description: language.t("settings.general.voice.testInput.error.description", { error: input.error() }),
+        variant: "error",
+      })
+      setStore("voiceInputTesting", false)
+      return
+    }
+    if (peak <= 0.02) {
       showToast({
         title: language.t("settings.general.voice.testInput.quiet.title"),
         description: language.t("settings.general.voice.testInput.quiet.description"),
         variant: "default",
       })
+      setStore("voiceInputTesting", false)
+      return
     }
+    showToast({
+      title: language.t("settings.general.voice.testInput.success.title"),
+      description: language.t("settings.general.voice.testInput.success.description", { level: peak.toFixed(3) }),
+      variant: "success",
+    })
     setStore("voiceInputTesting", false)
   }
 
@@ -527,6 +524,23 @@ export const SettingsGeneral: Component = () => {
               </Button>
             </div>
           </SettingsRow>
+
+          <Show when={store.voiceInputTesting || input.running()}>
+            <SettingsRow
+              title={language.t("settings.general.voice.testInput.level.title")}
+              description={language.t("settings.general.voice.testInput.level.description")}
+            >
+              <div class="flex items-center gap-3 min-w-56">
+                <div class="h-2 flex-1 rounded-full bg-surface border border-border overflow-hidden">
+                  <div
+                    class="h-full bg-success transition-all duration-75"
+                    style={{ width: `${Math.max(2, Math.min(100, input.level() * 220))}%` }}
+                  />
+                </div>
+                <span class="w-12 text-right text-12-regular text-text-weak">{input.level().toFixed(3)}</span>
+              </div>
+            </SettingsRow>
+          </Show>
 
           <SettingsRow
             title={language.t("settings.general.voice.output.title")}

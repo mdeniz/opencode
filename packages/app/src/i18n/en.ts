@@ -681,6 +681,8 @@ export const dict = {
   "settings.general.voice.testInput.success.description": "OpenCode detected live microphone input. Peak level: {{level}}",
   "settings.general.voice.testInput.quiet.title": "Microphone looks too quiet",
   "settings.general.voice.testInput.quiet.description": "OpenCode could access the microphone, but almost no input level was detected.",
+  "settings.general.voice.testInput.level.title": "Live input level",
+  "settings.general.voice.testInput.level.description": "Speak while testing to confirm the selected microphone is active.",
   "settings.general.voice.testInput.error.title": "Microphone test failed",
   "settings.general.voice.testInput.error.description": "Microphone capture failed: {{error}}",
   "settings.general.voice.testOutput.action": "Test speakers",

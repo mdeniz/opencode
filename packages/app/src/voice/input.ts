@@ -1,0 +1,125 @@
+import { onCleanup, type Accessor } from "solid-js"
+import { createStore } from "solid-js/store"
+
+type Opts = {
+  device?: Accessor<string | undefined>
+}
+
+export function voiceConstraints(id?: string) {
+  const base = {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  }
+  if (!id || id === "default") return base
+  return {
+    ...base,
+    deviceId: { exact: id },
+  }
+}
+
+export function createVoiceInput(opts?: Opts) {
+  const [store, setStore] = createStore({
+    running: false,
+    level: 0,
+    peak: 0,
+    error: "",
+  })
+
+  let stream: MediaStream | undefined
+  let ctx: AudioContext | undefined
+  let raf: number | undefined
+  let analyser: AnalyserNode | undefined
+  let data: Uint8Array | undefined
+
+  const supported = () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
+
+  const stop = async () => {
+    if (raf !== undefined) cancelAnimationFrame(raf)
+    raf = undefined
+    stream?.getTracks().forEach((track) => track.stop())
+    stream = undefined
+    analyser = undefined
+    data = undefined
+    const audio = ctx
+    ctx = undefined
+    await audio?.close().catch(() => undefined)
+    setStore("running", false)
+    setStore("level", 0)
+  }
+
+  const sample = () => {
+    if (!analyser || !data) return
+    analyser.getByteTimeDomainData(data)
+    let sum = 0
+    let peak = store.peak
+    for (const value of data) {
+      const item = Math.abs((value - 128) / 128)
+      sum += item * item
+      if (item > peak) peak = item
+    }
+    setStore("level", Math.sqrt(sum / data.length))
+    setStore("peak", peak)
+    raf = requestAnimationFrame(sample)
+  }
+
+  const start = async () => {
+    if (!supported()) {
+      setStore("error", "unsupported")
+      return false
+    }
+
+    await stop()
+    setStore("error", "")
+    setStore("peak", 0)
+
+    stream = await navigator.mediaDevices
+      .getUserMedia({
+        audio: voiceConstraints(opts?.device?.()),
+      })
+      .catch((err) => {
+        setStore("error", err instanceof Error ? err.message : String(err))
+        return
+      })
+
+    if (!stream) return false
+    if (typeof window === "undefined" || !window.AudioContext) {
+      setStore("error", "unsupported")
+      await stop()
+      return false
+    }
+
+    ctx = new window.AudioContext()
+    analyser = ctx.createAnalyser()
+    analyser.fftSize = 2048
+    data = new Uint8Array(analyser.frequencyBinCount)
+    ctx.createMediaStreamSource(stream).connect(analyser)
+    setStore("running", true)
+    sample()
+    return true
+  }
+
+  const test = async (ms = 2000) => {
+    const ok = await start()
+    if (!ok) return undefined
+    await new Promise((resolve) => setTimeout(resolve, ms))
+    const peak = store.peak
+    await stop()
+    return peak
+  }
+
+  onCleanup(() => {
+    void stop()
+  })
+
+  return {
+    supported,
+    running: () => store.running,
+    level: () => store.level,
+    peak: () => store.peak,
+    error: () => store.error,
+    start,
+    stop,
+    test,
+  }
+}
