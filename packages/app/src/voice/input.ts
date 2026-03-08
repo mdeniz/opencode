@@ -5,6 +5,12 @@ type Opts = {
   device?: Accessor<string | undefined>
 }
 
+export function preferredMime() {
+  if (typeof MediaRecorder === "undefined") return
+  const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]
+  return types.find((item) => MediaRecorder.isTypeSupported?.(item))
+}
+
 export function voiceConstraints(id?: string) {
   const base = {
     echoCancellation: true,
@@ -31,6 +37,8 @@ export function createVoiceInput(opts?: Opts) {
   let raf: number | undefined
   let analyser: AnalyserNode | undefined
   let data: Uint8Array<ArrayBuffer> | undefined
+  let rec: MediaRecorder | undefined
+  let chunks: Blob[] = []
 
   const supported = () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
 
@@ -41,6 +49,8 @@ export function createVoiceInput(opts?: Opts) {
     stream = undefined
     analyser = undefined
     data = undefined
+    rec = undefined
+    chunks = []
     const audio = ctx
     ctx = undefined
     await audio?.close().catch(() => undefined)
@@ -109,6 +119,36 @@ export function createVoiceInput(opts?: Opts) {
     return peak
   }
 
+  const record = async (ms = 5000) => {
+    const ok = await start()
+    if (!ok || !stream) return
+    if (typeof MediaRecorder === "undefined") {
+      setStore("error", "unsupported")
+      await stop()
+      return
+    }
+    chunks = []
+    const mime = preferredMime()
+    rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream)
+    rec.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) chunks.push(event.data)
+    }
+    rec.start()
+    await new Promise((resolve) => setTimeout(resolve, ms))
+    if (rec.state !== "inactive") {
+      const done = new Promise<void>((resolve) => {
+        if (!rec) return resolve()
+        rec.onstop = () => resolve()
+      })
+      rec.stop()
+      await done
+    }
+    const blob = chunks.length ? new Blob(chunks, { type: mime ?? chunks[0]?.type ?? "audio/webm" }) : undefined
+    const peak = store.peak
+    await stop()
+    return blob ? { blob, peak } : undefined
+  }
+
   onCleanup(() => {
     void stop()
   })
@@ -122,5 +162,6 @@ export function createVoiceInput(opts?: Opts) {
     start,
     stop,
     test,
+    record,
   }
 }

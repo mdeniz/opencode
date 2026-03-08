@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { voiceConstraints } from "./input"
+import { preferredMime, voiceConstraints } from "./input"
 
 describe("voice input constraints", () => {
   test("uses generic audio constraints for default device", () => {
@@ -17,5 +17,12 @@ describe("voice input constraints", () => {
       autoGainControl: true,
       deviceId: { exact: "mic-1" },
     })
+  })
+
+  test("returns undefined when media recorder is unavailable", () => {
+    const prev = (globalThis as any).MediaRecorder
+    ;(globalThis as any).MediaRecorder = undefined
+    expect(preferredMime()).toBeUndefined()
+    ;(globalThis as any).MediaRecorder = prev
   })
 })

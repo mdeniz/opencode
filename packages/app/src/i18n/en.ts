@@ -283,6 +283,7 @@ export const dict = {
   "prompt.voice.status.ready": "Voice ready",
   "prompt.voice.status.listening": "Listening",
   "prompt.voice.status.processing": "Processing speech",
+  "prompt.voice.status.recording": "Recording voice",
   "prompt.voice.status.speaking": "Speaking reply",
   "prompt.attachment.remove": "Remove attachment",
   "prompt.action.send": "Send",

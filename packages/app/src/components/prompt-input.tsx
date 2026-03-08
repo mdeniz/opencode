@@ -57,10 +57,11 @@ import { PromptDragOverlay } from "./prompt-input/drag-overlay"
 import { promptPlaceholder } from "./prompt-input/placeholder"
 import { ImagePreview } from "@opencode-ai/ui/image-preview"
 import { showToast } from "@opencode-ai/ui/toast"
-import { createSpeechRecognition } from "@/utils/speech"
 import { createVoicePlayer } from "@/voice/tts"
 import { assistantVoiceText } from "@/voice/text"
 import { createVoiceInput } from "@/voice/input"
+import { transcribeVoice } from "@/voice/transcribe"
+import { useServer } from "@/context/server"
 
 interface PromptInputProps {
   class?: string
@@ -116,6 +117,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const language = useLanguage()
   const platform = usePlatform()
   const settings = useSettings()
+  const server = useServer()
   let editorRef!: HTMLDivElement
   let fileInputRef: HTMLInputElement | undefined
   let scrollRef!: HTMLDivElement
@@ -256,6 +258,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voiceSeen?: string
     voiceSession?: string
     voiceDraft: string
+    voiceBusy: boolean
   }>({
     popover: null,
     historyIndex: -1,
@@ -269,6 +272,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voiceSeen: undefined,
     voiceSession: undefined,
     voiceDraft: "",
+    voiceBusy: false,
   })
 
   const buttonsSpring = useSpring(() => (store.mode === "normal" ? 1 : 0), { visualDuration: 0.2, bounce: 0 })
@@ -1003,26 +1007,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const player = createVoicePlayer({ lang: language.intl })
   const input = createVoiceInput({ device: settings.voice.input })
-  const speech = createSpeechRecognition({
-    lang: language.intl(),
-    onFinal: (text) => {
-      setStore("voiceDraft", "")
-      if (!appendVoice(text)) return
-      setStore("voiceAdded", (count) => count + 1)
-    },
-    onInterim: (text) => {
-      setStore("voiceDraft", text)
-    },
-    onError: (error) => {
-      if (error === "aborted") return
-      setStore("voiceDraft", "")
-      showToast({
-        title: language.t("toast.voice.error.title"),
-        description: language.t("toast.voice.error.description", { error }),
-        variant: "error",
-      })
-    },
-  })
 
   const unsupportedVoice = () => {
     showToast({
@@ -1032,17 +1016,43 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     })
   }
 
-  const stopVoice = () => {
-    speech.stop()
-    void input.stop()
-    if (!settings.voice.autoSend() || store.voiceAdded === 0) return
+  const stopVoice = async () => {
+    setStore("voiceBusy", true)
+    const out = await input.record(2500)
+    setStore("voiceBusy", false)
+    if (!out) {
+      showToast({
+        title: language.t("toast.voice.error.title"),
+        description: input.error() || language.t("toast.voice.error.description", { error: "capture failed" }),
+        variant: "error",
+      })
+      return
+    }
+    setStore("voiceDraft", language.t("prompt.voice.status.processing"))
+    const res = await transcribeVoice({
+      server: server.current!.http,
+      audio: out.blob,
+      language: language.intl(),
+    }).catch((err) => {
+      showToast({
+        title: language.t("toast.voice.error.title"),
+        description: err instanceof Error ? err.message : String(err),
+        variant: "error",
+      })
+      return
+    })
+    setStore("voiceDraft", "")
+    if (!res?.text) return
+    if (!appendVoice(res.text)) return
+    setStore("voiceAdded", (count) => count + 1)
+    if (!settings.voice.autoSend()) return
     queueMicrotask(() => {
       void handleSubmit({ preventDefault: () => undefined } as Event)
     })
   }
 
   const startVoice = () => {
-    if (!speech.isSupported()) {
+    if (!input.supported() || !server.current) {
       unsupportedVoice()
       return
     }
@@ -1052,24 +1062,18 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceDraft", "")
     editorRef.focus()
     void input.start()
-    speech.start()
   }
 
   const toggleVoice = () => {
-    if (speech.isRecording()) {
-      stopVoice()
+    if (input.running()) {
+      void stopVoice()
       return
     }
     startVoice()
   }
 
   createEffect(() => {
-    speech.setLang(language.intl())
-  })
-
-  createEffect(() => {
     if (settings.voice.enabled()) return
-    if (speech.isRecording()) speech.stop()
     if (input.running()) void input.stop()
     if (player.speaking()) player.stop()
     if (store.voiceDraft) setStore("voiceDraft", "")
@@ -1083,7 +1087,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceHydrated", false)
     setStore("voiceDraft", "")
     player.stop()
-    if (speech.isRecording()) speech.stop()
     if (input.running()) void input.stop()
   })
 
@@ -1101,7 +1104,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (store.voiceSeen === message.id) return
     setStore("voiceSeen", message.id)
     if (!settings.voice.enabled() || !settings.voice.autoSpeak()) return
-    if (speech.isRecording()) return
+    if (input.running() || store.voiceBusy) return
     player.speak(text)
   })
 
@@ -1132,12 +1135,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     },
     {
       id: "voice.toggle",
-      title: speech.isRecording() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
+      title: input.running() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
       description: language.t("command.voice.toggle.description"),
       category: language.t("command.category.session"),
       keybind: "mod+shift+v",
       slash: "voice",
-      disabled: store.mode !== "normal" || working(),
+      disabled: store.mode !== "normal" || working() || store.voiceBusy,
       onSelect: toggleVoice,
     },
   ])
@@ -1341,7 +1344,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           onRemove={removeImageAttachment}
           removeLabel={language.t("prompt.attachment.remove")}
         />
-        <Show when={speech.isRecording() && store.voiceDraft}>
+        <Show when={!input.running() && store.voiceDraft}>
           <div class="px-3 pt-1 text-12-regular text-text-weak" data-action="prompt-voice-draft">
             {store.voiceDraft}
           </div>
@@ -1350,22 +1353,24 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           <div class="px-3 pt-1.5 flex items-center gap-2 text-11-regular text-text-weak" data-action="prompt-voice-status">
             <span
               classList={{
-                "size-2 rounded-full bg-success": speech.isRecording(),
-                "size-2 rounded-full bg-warning": !speech.isRecording() && !!store.voiceDraft,
-                "size-2 rounded-full bg-info": !speech.isRecording() && player.speaking(),
-                "size-2 rounded-full bg-border": !speech.isRecording() && !store.voiceDraft && !player.speaking(),
+                "size-2 rounded-full bg-success": input.running(),
+                "size-2 rounded-full bg-warning": !input.running() && !!store.voiceDraft,
+                "size-2 rounded-full bg-info": !input.running() && player.speaking(),
+                "size-2 rounded-full bg-border": !input.running() && !store.voiceDraft && !player.speaking(),
               }}
             />
             <span>
-              {speech.isRecording()
-                ? language.t("prompt.voice.status.listening")
+              {input.running()
+                ? language.t("prompt.voice.status.recording")
+                : store.voiceBusy
+                  ? language.t("prompt.voice.status.processing")
                 : player.speaking()
                   ? language.t("prompt.voice.status.speaking")
                   : store.voiceDraft
                     ? language.t("prompt.voice.status.processing")
                     : language.t("prompt.voice.status.ready")}
             </span>
-            <Show when={speech.isRecording()}>
+            <Show when={input.running()}>
               <div class="ml-auto flex items-center gap-2 min-w-28">
                 <div class="h-1.5 flex-1 rounded-full bg-surface border border-border overflow-hidden">
                   <div
@@ -1475,11 +1480,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 </Button>
               </TooltipKeybind>
 
-              <Show when={speech.isSupported()}>
+              <Show when={input.supported() && !!server.current}>
                 <Tooltip
                   placement="top"
                   value={
-                    speech.isRecording()
+                    input.running()
                       ? language.t("prompt.action.voiceStop")
                       : settings.voice.enabled()
                         ? language.t("prompt.action.voiceStart")
@@ -1490,7 +1495,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     data-action="prompt-voice"
                     type="button"
                     icon="speech-bubble"
-                    variant={speech.isRecording() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
+                    variant={input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
                     class="size-8"
                     style={{
                       opacity: buttonsSpring(),
@@ -1498,10 +1503,10 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                       filter: `blur(${(1 - buttonsSpring()) * 2}px)`,
                     }}
                     onClick={toggleVoice}
-                    disabled={store.mode !== "normal" || working()}
+                    disabled={store.mode !== "normal" || working() || store.voiceBusy}
                     tabIndex={store.mode === "normal" ? undefined : -1}
-                    aria-label={speech.isRecording() ? language.t("prompt.action.voiceStop") : language.t("prompt.action.voiceStart")}
-                    aria-pressed={speech.isRecording()}
+                    aria-label={input.running() ? language.t("prompt.action.voiceStop") : language.t("prompt.action.voiceStart")}
+                    aria-pressed={input.running()}
                   />
                 </Tooltip>
               </Show>
