@@ -11,6 +11,7 @@ import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
 import { useSettings, monoFontFamily } from "@/context/settings"
 import { playSound, SOUND_OPTIONS } from "@/utils/sound"
+import { createVoiceDevices } from "@/voice/devices"
 import { Link } from "./link"
 
 let demoSoundState = {
@@ -46,6 +47,7 @@ export const SettingsGeneral: Component = () => {
   const [store, setStore] = createStore({
     checking: false,
   })
+  const voice = createVoiceDevices()
 
   const linux = createMemo(() => platform.platform === "desktop" && platform.os === "linux")
 
@@ -271,6 +273,11 @@ export const SettingsGeneral: Component = () => {
     </div>
   )
 
+  const voiceOptions = (kind: "audioinput" | "audiooutput") => {
+    const items = kind === "audioinput" ? voice.inputs() : voice.outputs()
+    return [{ id: "default", label: language.t("settings.general.voice.device.default") }, ...items]
+  }
+
   const FeedSection = () => (
     <div class="flex flex-col gap-1">
       <h3 class="text-14-medium text-text-strong pb-2">{language.t("settings.general.section.feed")}</h3>
@@ -443,6 +450,42 @@ export const SettingsGeneral: Component = () => {
             <Switch checked={settings.voice.autoSpeak()} onChange={(checked) => settings.voice.setAutoSpeak(checked)} />
           </div>
         </SettingsRow>
+
+        <Show when={voice.supported()}>
+          <SettingsRow
+            title={language.t("settings.general.voice.input.title")}
+            description={language.t("settings.general.voice.input.description")}
+          >
+            <Select
+              data-action="settings-voice-input"
+              options={voiceOptions("audioinput")}
+              current={voiceOptions("audioinput").find((item) => item.id === settings.voice.input())}
+              value={(item) => item.id}
+              label={(item) => item.label}
+              onSelect={(item) => item && settings.voice.setInput(item.id)}
+              variant="secondary"
+              size="small"
+              triggerVariant="settings"
+            />
+          </SettingsRow>
+
+          <SettingsRow
+            title={language.t("settings.general.voice.output.title")}
+            description={language.t("settings.general.voice.output.description")}
+          >
+            <Select
+              data-action="settings-voice-output"
+              options={voiceOptions("audiooutput")}
+              current={voiceOptions("audiooutput").find((item) => item.id === settings.voice.output())}
+              value={(item) => item.id}
+              label={(item) => item.label}
+              onSelect={(item) => item && settings.voice.setOutput(item.id)}
+              variant="secondary"
+              size="small"
+              triggerVariant="settings"
+            />
+          </SettingsRow>
+        </Show>
       </div>
     </div>
   )

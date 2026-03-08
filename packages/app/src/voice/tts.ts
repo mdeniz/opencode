@@ -3,6 +3,7 @@ import { cleanVoiceText } from "./text"
 
 type Opts = {
   lang?: Accessor<string | undefined>
+  device?: Accessor<string | undefined>
 }
 
 export function createVoicePlayer(opts?: Opts) {
@@ -43,11 +44,14 @@ export function createVoicePlayer(opts?: Opts) {
     return true
   }
 
+  const device = () => opts?.device?.() || "default"
+
   onCleanup(stop)
 
   return {
     supported,
     speaking,
+    device,
     speak,
     stop,
   }

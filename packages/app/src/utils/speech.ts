@@ -54,6 +54,7 @@ const extractSuffix = (committed: string, hypothesis: string) => {
 
 export function createSpeechRecognition(opts?: {
   lang?: string
+  device?: string
   onFinal?: (text: string) => void
   onInterim?: (text: string) => void
   onError?: (error: string) => void
@@ -308,6 +309,8 @@ export function createSpeechRecognition(opts?: {
     recognition.lang = value
   }
 
+  const device = () => opts?.device || "default"
+
   onCleanup(() => {
     shouldContinue = false
     clearRestart()
@@ -330,5 +333,6 @@ export function createSpeechRecognition(opts?: {
     start,
     stop,
     setLang,
+    device,
   }
 }

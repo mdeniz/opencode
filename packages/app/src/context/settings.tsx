@@ -43,6 +43,8 @@ export interface Settings {
     enabled: boolean
     autoSend: boolean
     autoSpeak: boolean
+    input: string
+    output: string
   }
 }
 
@@ -82,6 +84,8 @@ const defaultSettings: Settings = {
     enabled: false,
     autoSend: false,
     autoSpeak: true,
+    input: "default",
+    output: "default",
   },
 }
 
@@ -252,6 +256,14 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         autoSpeak: withFallback(() => store.voice?.autoSpeak, defaultSettings.voice.autoSpeak),
         setAutoSpeak(value: boolean) {
           setStore("voice", "autoSpeak", value)
+        },
+        input: withFallback(() => store.voice?.input, defaultSettings.voice.input),
+        setInput(value: string) {
+          setStore("voice", "input", value)
+        },
+        output: withFallback(() => store.voice?.output, defaultSettings.voice.output),
+        setOutput(value: string) {
+          setStore("voice", "output", value)
         },
       },
     }
