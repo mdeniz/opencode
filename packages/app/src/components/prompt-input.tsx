@@ -254,6 +254,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voiceHydrated: boolean
     voiceSeen?: string
     voiceSession?: string
+    voiceDraft: string
   }>({
     popover: null,
     historyIndex: -1,
@@ -266,6 +267,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voiceHydrated: false,
     voiceSeen: undefined,
     voiceSession: undefined,
+    voiceDraft: "",
   })
 
   const buttonsSpring = useSpring(() => (store.mode === "normal" ? 1 : 0), { visualDuration: 0.2, bounce: 0 })
@@ -440,6 +442,32 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const setEditorText = (text: string) => {
     clearEditor()
     editorRef.textContent = text
+  }
+
+  const appendVoice = (text: string) => {
+    const next = text.trim()
+    if (!next) return false
+    const parts = prompt.current()
+    const imgs = parts.filter((part): part is ImageAttachmentPart => part.type === "image")
+    const input = parts.filter((part) => part.type !== "image")
+    const last = input[input.length - 1]
+    const gap = !last ? "" : last.content.endsWith("\n") || /\s$/.test(last.content) ? "" : " "
+    const val = gap + next
+
+    const items =
+      last?.type === "text"
+        ? [...input.slice(0, -1), { ...last, content: last.content + val }]
+        : [...input, { type: "text" as const, content: val, start: 0, end: 0 }]
+
+    const len = promptLength(items)
+    mirror.input = true
+    prompt.set([...items, ...imgs], len)
+    requestAnimationFrame(() => {
+      editorRef.focus()
+      setCursorPosition(editorRef, len)
+      queueScroll()
+    })
+    return true
   }
 
   const focusEditorEnd = () => {
@@ -976,12 +1004,16 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const speech = createSpeechRecognition({
     lang: language.intl(),
     onFinal: (text) => {
-      if (!text.trim()) return
-      addPart({ type: "text", content: text, start: 0, end: 0 })
+      setStore("voiceDraft", "")
+      if (!appendVoice(text)) return
       setStore("voiceAdded", (count) => count + 1)
+    },
+    onInterim: (text) => {
+      setStore("voiceDraft", text)
     },
     onError: (error) => {
       if (error === "aborted") return
+      setStore("voiceDraft", "")
       showToast({
         title: language.t("toast.voice.error.title"),
         description: language.t("toast.voice.error.description", { error }),
@@ -1014,6 +1046,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (!settings.voice.enabled()) settings.voice.setEnabled(true)
     player.stop()
     setStore("voiceAdded", 0)
+    setStore("voiceDraft", "")
     editorRef.focus()
     speech.start()
   }
@@ -1034,6 +1067,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (settings.voice.enabled()) return
     if (speech.isRecording()) speech.stop()
     if (player.speaking()) player.stop()
+    if (store.voiceDraft) setStore("voiceDraft", "")
   })
 
   createEffect(() => {
@@ -1042,6 +1076,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceSession", sessionID)
     setStore("voiceSeen", undefined)
     setStore("voiceHydrated", false)
+    setStore("voiceDraft", "")
     player.stop()
     if (speech.isRecording()) speech.stop()
   })
@@ -1300,6 +1335,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           onRemove={removeImageAttachment}
           removeLabel={language.t("prompt.attachment.remove")}
         />
+        <Show when={speech.isRecording() && store.voiceDraft}>
+          <div class="px-3 pt-1 text-12-regular text-text-weak" data-action="prompt-voice-draft">
+            {store.voiceDraft}
+          </div>
+        </Show>
         <div
           class="relative"
           onMouseDown={(e) => {
