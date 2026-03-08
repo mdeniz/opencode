@@ -33,6 +33,7 @@ Those can build on top of the app experience later.
 
 - The settings UI now stores a preferred microphone and speaker selection.
 - Settings also expose `Test mic` and `Test speakers` actions for a quick browser-level check.
+- `Test mic` now validates raw audio capture level instead of relying on browser speech recognition, which is a more reliable signal that the microphone is actually live.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
 - Browser speech recognition APIs do not expose a standard way to bind recognition to a specific microphone, so the microphone picker is currently advisory only.
 - Browser speech synthesis also does not provide reliable speaker routing. True output routing would require an `HTMLAudioElement.setSinkId()` pipeline or desktop-native support.

@@ -284,12 +284,17 @@ export const SettingsGeneral: Component = () => {
 
   const testInput = async () => {
     setStore("voiceInputTesting", true)
-    await testVoiceInput({
+    const ok = await testVoiceInput({
       onDone: (text) => {
         showToast({
-          title: language.t("settings.general.voice.testInput.success.title"),
-          description: text || language.t("settings.general.voice.testInput.success.empty"),
-          variant: "success",
+          title: text === "0.000"
+            ? language.t("settings.general.voice.testInput.quiet.title")
+            : language.t("settings.general.voice.testInput.success.title"),
+          description:
+            text === "0.000"
+              ? language.t("settings.general.voice.testInput.quiet.description")
+              : language.t("settings.general.voice.testInput.success.description", { level: text }),
+          variant: text === "0.000" ? "default" : "success",
         })
       },
       onError: (error) => {
@@ -300,6 +305,13 @@ export const SettingsGeneral: Component = () => {
         })
       },
     })
+    if (!ok) {
+      showToast({
+        title: language.t("settings.general.voice.testInput.quiet.title"),
+        description: language.t("settings.general.voice.testInput.quiet.description"),
+        variant: "default",
+      })
+    }
     setStore("voiceInputTesting", false)
   }
 
