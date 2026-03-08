@@ -450,6 +450,16 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       disabled: store.mode === "normal",
       onSelect: () => setMode("normal"),
     },
+    {
+      id: "voice.toggle",
+      title: speech.isRecording() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
+      description: language.t("command.voice.toggle.description"),
+      category: language.t("command.category.session"),
+      keybind: "mod+shift+v",
+      slash: "voice",
+      disabled: store.mode !== "normal" || working(),
+      onSelect: () => toggleVoice(),
+    },
   ])
 
   const closePopover = () => setStore("popover", null)
