@@ -12,6 +12,8 @@ import { usePlatform } from "@/context/platform"
 import { useSettings, monoFontFamily } from "@/context/settings"
 import { playSound, SOUND_OPTIONS } from "@/utils/sound"
 import { createVoiceDevices } from "@/voice/devices"
+import { testVoiceInput } from "@/voice/devices"
+import { testVoiceOutput } from "@/voice/tts"
 import { Link } from "./link"
 
 let demoSoundState = {
@@ -46,6 +48,8 @@ export const SettingsGeneral: Component = () => {
 
   const [store, setStore] = createStore({
     checking: false,
+    voiceInputTesting: false,
+    voiceOutputTesting: false,
   })
   const voice = createVoiceDevices()
 
@@ -278,6 +282,42 @@ export const SettingsGeneral: Component = () => {
     return [{ id: "default", label: language.t("settings.general.voice.device.default") }, ...items]
   }
 
+  const testInput = async () => {
+    setStore("voiceInputTesting", true)
+    await testVoiceInput({
+      onDone: (text) => {
+        showToast({
+          title: language.t("settings.general.voice.testInput.success.title"),
+          description: text || language.t("settings.general.voice.testInput.success.empty"),
+          variant: "success",
+        })
+      },
+      onError: (error) => {
+        showToast({
+          title: language.t("settings.general.voice.testInput.error.title"),
+          description: language.t("settings.general.voice.testInput.error.description", { error }),
+          variant: "error",
+        })
+      },
+    })
+    setStore("voiceInputTesting", false)
+  }
+
+  const testOutput = () => {
+    setStore("voiceOutputTesting", true)
+    const ok = testVoiceOutput(language.t("settings.general.voice.testOutput.sample"))
+    showToast({
+      title: ok
+        ? language.t("settings.general.voice.testOutput.success.title")
+        : language.t("settings.general.voice.testOutput.error.title"),
+      description: ok
+        ? language.t("settings.general.voice.testOutput.success.description")
+        : language.t("settings.general.voice.testOutput.error.description"),
+      variant: ok ? "success" : "error",
+    })
+    setTimeout(() => setStore("voiceOutputTesting", false), 1000)
+  }
+
   const FeedSection = () => (
     <div class="flex flex-col gap-1">
       <h3 class="text-14-medium text-text-strong pb-2">{language.t("settings.general.section.feed")}</h3>
@@ -456,34 +496,48 @@ export const SettingsGeneral: Component = () => {
             title={language.t("settings.general.voice.input.title")}
             description={language.t("settings.general.voice.input.description")}
           >
-            <Select
-              data-action="settings-voice-input"
-              options={voiceOptions("audioinput")}
-              current={voiceOptions("audioinput").find((item) => item.id === settings.voice.input())}
-              value={(item) => item.id}
-              label={(item) => item.label}
-              onSelect={(item) => item && settings.voice.setInput(item.id)}
-              variant="secondary"
-              size="small"
-              triggerVariant="settings"
-            />
+            <div class="flex items-center gap-2">
+              <Select
+                data-action="settings-voice-input"
+                options={voiceOptions("audioinput")}
+                current={voiceOptions("audioinput").find((item) => item.id === settings.voice.input())}
+                value={(item) => item.id}
+                label={(item) => item.label}
+                onSelect={(item) => item && settings.voice.setInput(item.id)}
+                variant="secondary"
+                size="small"
+                triggerVariant="settings"
+              />
+              <Button size="small" variant="secondary" disabled={store.voiceInputTesting} onClick={() => void testInput()}>
+                {store.voiceInputTesting
+                  ? language.t("settings.general.voice.testInput.running")
+                  : language.t("settings.general.voice.testInput.action")}
+              </Button>
+            </div>
           </SettingsRow>
 
           <SettingsRow
             title={language.t("settings.general.voice.output.title")}
             description={language.t("settings.general.voice.output.description")}
           >
-            <Select
-              data-action="settings-voice-output"
-              options={voiceOptions("audiooutput")}
-              current={voiceOptions("audiooutput").find((item) => item.id === settings.voice.output())}
-              value={(item) => item.id}
-              label={(item) => item.label}
-              onSelect={(item) => item && settings.voice.setOutput(item.id)}
-              variant="secondary"
-              size="small"
-              triggerVariant="settings"
-            />
+            <div class="flex items-center gap-2">
+              <Select
+                data-action="settings-voice-output"
+                options={voiceOptions("audiooutput")}
+                current={voiceOptions("audiooutput").find((item) => item.id === settings.voice.output())}
+                value={(item) => item.id}
+                label={(item) => item.label}
+                onSelect={(item) => item && settings.voice.setOutput(item.id)}
+                variant="secondary"
+                size="small"
+                triggerVariant="settings"
+              />
+              <Button size="small" variant="secondary" disabled={store.voiceOutputTesting} onClick={testOutput}>
+                {store.voiceOutputTesting
+                  ? language.t("settings.general.voice.testOutput.running")
+                  : language.t("settings.general.voice.testOutput.action")}
+              </Button>
+            </div>
           </SettingsRow>
         </Show>
       </div>

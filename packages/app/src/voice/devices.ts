@@ -36,3 +36,31 @@ export function createVoiceDevices() {
     outputs: () => (list.latest ?? []).filter((item) => item.kind === "audiooutput"),
   }
 }
+
+export async function testVoiceInput(opts?: { onDone?: (text: string) => void; onError?: (error: string) => void }) {
+  const ctor = typeof window === "undefined" ? undefined : ((window as any).webkitSpeechRecognition ?? (window as any).SpeechRecognition)
+  if (!ctor) {
+    opts?.onError?.("unsupported")
+    return false
+  }
+
+  const rec = new ctor()
+  rec.continuous = false
+  rec.interimResults = false
+  rec.maxAlternatives = 1
+  rec.lang = typeof navigator === "undefined" ? "en-US" : navigator.language || "en-US"
+
+  return await new Promise<boolean>((resolve) => {
+    rec.onresult = (event: any) => {
+      const text = event.results?.[0]?.[0]?.transcript?.trim() || ""
+      opts?.onDone?.(text)
+      resolve(true)
+    }
+    rec.onerror = (event: any) => {
+      opts?.onError?.(event.error || "unknown")
+      resolve(false)
+    }
+    rec.onend = () => resolve(true)
+    rec.start()
+  })
+}

@@ -56,3 +56,8 @@ export function createVoicePlayer(opts?: Opts) {
     stop,
   }
 }
+
+export function testVoiceOutput(input?: string) {
+  const player = createVoicePlayer()
+  return player.speak(input || "This is a speaker test from OpenCode voice mode.")
+}
