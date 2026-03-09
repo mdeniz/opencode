@@ -26,6 +26,7 @@ type BuildRequestPartsInput = {
   text: string
   voice?: {
     language: "auto" | "es" | "en"
+    style: "light" | "strong"
   }
   messageID: string
   sessionID: string
@@ -44,6 +45,25 @@ const fileQuery = (selection: FileSelection | undefined) =>
 
 const isFileAttachment = (part: Prompt[number]): part is FileAttachmentPart => part.type === "file"
 const isAgentAttachment = (part: Prompt[number]): part is AgentPart => part.type === "agent"
+
+const voiceNote = (voice: NonNullable<BuildRequestPartsInput["voice"]>) => {
+  if (voice.style === "strong") {
+    if (voice.language === "en") {
+      return "System note: the user is listening through text to speech. Rewrite for listening, not scanning. Use short sentences, natural punctuation, direct spoken phrasing, and simple structure. Avoid long lists, markdown-heavy formatting, tables, and code blocks unless explicitly requested. Answer in natural English for speech."
+    }
+    if (voice.language === "es") {
+      return "Nota del sistema: la persona escuchara la respuesta con text to speech. Reescribe para ser oido, no para escanear visualmente. Usa frases cortas, puntuacion natural, lenguaje directo y estructura simple. Evita listas largas, markdown recargado, tablas y bloques de codigo salvo que se pidan. Responde en un espanol natural para voz."
+    }
+    return "System note: the user is listening through text to speech. Rewrite for listening, with short sentences, natural punctuation, direct phrasing, and simple structure. Avoid long lists, markdown-heavy formatting, tables, and code blocks unless explicitly requested. Match the spoken language naturally."
+  }
+  if (voice.language === "en") {
+    return "System note: the user is listening through text to speech. Write for listening. Use short sentences, natural punctuation, and direct phrasing. Avoid long lists, tables, and code blocks unless explicitly requested. Answer in natural English for speech."
+  }
+  if (voice.language === "es") {
+    return "Nota del sistema: la persona escuchara la respuesta con text to speech. Escribe para ser oido. Usa frases cortas, puntuacion natural y expresiones directas. Evita listas largas, tablas y bloques de codigo salvo que se pidan. Responde en un espanol natural para voz."
+  }
+  return "System note: the user is listening through text to speech. Write for listening, with short sentences, natural punctuation, and direct phrasing. Avoid long lists, tables, and code blocks unless explicitly requested. Match the spoken language naturally."
+}
 
 const toOptimisticPart = (part: PromptRequestPart, sessionID: string, messageID: string): Part => {
   if (part.type === "text") {
@@ -88,12 +108,7 @@ export function buildRequestParts(input: BuildRequestPartsInput) {
           {
             id: Identifier.ascending("part"),
             type: "text" as const,
-            text:
-              input.voice.language === "en"
-                ? "System note: the user is listening through text to speech. Write for listening. Use short sentences, natural punctuation, and direct phrasing. Avoid long lists, tables, and code blocks unless explicitly requested. Answer in natural English for speech."
-                : input.voice.language === "es"
-                  ? "Nota del sistema: la persona escuchara la respuesta con text to speech. Escribe para ser oido. Usa frases cortas, puntuacion natural y expresiones directas. Evita listas largas, tablas y bloques de codigo salvo que se pidan. Responde en un espanol natural para voz."
-                  : "System note: the user is listening through text to speech. Write for listening, with short sentences, natural punctuation, and direct phrasing. Avoid long lists, tables, and code blocks unless explicitly requested. Match the spoken language naturally.",
+            text: voiceNote(input.voice),
             synthetic: true,
             ignored: true,
           } satisfies PromptRequestPart,

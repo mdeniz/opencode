@@ -45,6 +45,7 @@ type PromptSubmitInput = {
   voice?: {
     enabled: Accessor<boolean>
     language: Accessor<"auto" | "es" | "en">
+    style: Accessor<"light" | "strong">
   }
 }
 
@@ -308,9 +309,10 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       context,
       images,
       text,
-      voice: input.voice?.enabled()
+    voice: input.voice?.enabled()
         ? {
             language: input.voice.language(),
+            style: input.voice.style(),
           }
         : undefined,
       sessionID: session.id,

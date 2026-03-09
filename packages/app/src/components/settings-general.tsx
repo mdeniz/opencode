@@ -298,6 +298,10 @@ export const SettingsGeneral: Component = () => {
     { id: "medium", label: language.t("settings.general.voice.model.medium") },
     { id: "large-v3", label: language.t("settings.general.voice.model.large") },
   ]
+  const styleOptions = [
+    { id: "light", label: language.t("settings.general.voice.style.light") },
+    { id: "strong", label: language.t("settings.general.voice.style.strong") },
+  ]
   const meter = () => `${Math.max(4, Math.min(100, input.meter() * 100))}%`
 
   const testInput = async () => {
@@ -528,6 +532,23 @@ export const SettingsGeneral: Component = () => {
             value={(item) => item.id}
             label={(item) => item.label}
             onSelect={(item) => item && settings.voice.setStt(item.id as "auto" | "local" | "remote")}
+            variant="secondary"
+            size="small"
+            triggerVariant="settings"
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.voice.style.title")}
+          description={language.t("settings.general.voice.style.description")}
+        >
+          <Select
+            data-action="settings-voice-style"
+            options={styleOptions}
+            current={styleOptions.find((item) => item.id === settings.voice.style())}
+            value={(item) => item.id}
+            label={(item) => item.label}
+            onSelect={(item) => item && settings.voice.setStyle(item.id as "light" | "strong")}
             variant="secondary"
             size="small"
             triggerVariant="settings"

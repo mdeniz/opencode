@@ -57,6 +57,7 @@ import { PromptDragOverlay } from "./prompt-input/drag-overlay"
 import { promptPlaceholder } from "./prompt-input/placeholder"
 import { ImagePreview } from "@opencode-ai/ui/image-preview"
 import { showToast } from "@opencode-ai/ui/toast"
+import { Spinner } from "@opencode-ai/ui/spinner"
 import { createVoicePlayer } from "@/voice/tts"
 import { assistantVoiceText } from "@/voice/text"
 import { createVoiceInput } from "@/voice/input"
@@ -1011,6 +1012,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     voice: {
       enabled: () => settings.voice.enabled() && settings.voice.autoSpeak(),
       language: settings.voice.language,
+      style: settings.voice.style,
     },
   })
 
@@ -1025,11 +1027,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     },
   })
   const meter = () => `${Math.max(4, Math.min(100, input.meter() * 100))}%`
-  const voiceIcon = () => {
-    if (store.voiceBusy) return "models" as const
-    if (player.speaking()) return "stop" as const
-    return "speech-bubble" as const
-  }
+  const voiceIcon = () => (player.speaking() ? "stop" : input.running() ? "circle-x" : "speech-bubble")
   const voiceLabel = () => {
     if (store.voiceBusy) return language.t("prompt.action.voiceProcessing")
     if (player.speaking()) return language.t("prompt.action.voiceStopSpeaking")
@@ -1542,24 +1540,45 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     voiceLabel()
                   }
                 >
-                  <IconButton
-                    data-action="prompt-voice"
-                    type="button"
-                    icon={voiceIcon()}
-                    variant={store.voiceBusy || player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
-                    class="size-8"
-                    style={{
-                      opacity: buttonsSpring(),
-                      transform: `scale(${0.95 + buttonsSpring() * 0.05})`,
-                      filter: `blur(${(1 - buttonsSpring()) * 2}px)`,
-                    }}
-                    classList={{ "animate-spin": store.voiceBusy }}
-                    onClick={toggleVoice}
-                    disabled={store.mode !== "normal" || working()}
-                    tabIndex={store.mode === "normal" ? undefined : -1}
-                    aria-label={voiceLabel()}
-                    aria-pressed={player.speaking() || input.running()}
-                  />
+                  <Show
+                    when={store.voiceBusy}
+                    fallback={
+                      <IconButton
+                        data-action="prompt-voice"
+                        type="button"
+                        icon={voiceIcon()}
+                        variant={player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
+                        class="size-8"
+                        style={{
+                          opacity: buttonsSpring(),
+                          transform: `scale(${0.95 + buttonsSpring() * 0.05})`,
+                          filter: `blur(${(1 - buttonsSpring()) * 2}px)`,
+                        }}
+                        onClick={toggleVoice}
+                        disabled={store.mode !== "normal" || working()}
+                        tabIndex={store.mode === "normal" ? undefined : -1}
+                        aria-label={voiceLabel()}
+                        aria-pressed={player.speaking() || input.running()}
+                      />
+                    }
+                  >
+                    <Button
+                      data-action="prompt-voice"
+                      type="button"
+                      variant="primary"
+                      class="size-8 p-0"
+                      style={{
+                        opacity: buttonsSpring(),
+                        transform: `scale(${0.95 + buttonsSpring() * 0.05})`,
+                        filter: `blur(${(1 - buttonsSpring()) * 2}px)`,
+                      }}
+                      disabled={store.mode !== "normal" || working()}
+                      tabIndex={store.mode === "normal" ? undefined : -1}
+                      aria-label={voiceLabel()}
+                    >
+                      <Spinner class="size-4 text-icon-primary" />
+                    </Button>
+                  </Show>
                 </Tooltip>
               </Show>
 
