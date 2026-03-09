@@ -80,8 +80,8 @@ export function Prompt(props: PromptProps) {
   const { theme, syntax } = useTheme()
   const kv = useKV()
   const [voice, setVoice] = kv.signal("voice_mode", false)
-  const [voiceLang] = kv.signal<"auto" | "es" | "en">("voice_language", "auto")
-  const [voiceStyle] = kv.signal<"light" | "strong">("voice_style", "light")
+  const [voiceLang, setVoiceLang] = kv.signal<"auto" | "es" | "en">("voice_language", "auto")
+  const [voiceStyle, setVoiceStyle] = kv.signal<"light" | "strong">("voice_style", "light")
   const [voiceSend, setVoiceSend] = kv.signal("voice_send", false)
   const [store2, setStore2] = createStore<{
     recording: boolean
@@ -360,6 +360,71 @@ export function Prompt(props: PromptProps) {
             message: next ? "Voice auto-send enabled" : "Voice auto-send disabled",
             duration: 2500,
           })
+        },
+      },
+      {
+        title: "Voice language: auto",
+        value: "voice.lang.auto",
+        category: "Voice",
+        slash: {
+          name: "voice-lang-auto",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceLang(() => "auto")
+          toast.show({ variant: "success", message: "Voice language set to auto", duration: 2500 })
+        },
+      },
+      {
+        title: "Voice language: Spanish",
+        value: "voice.lang.es",
+        category: "Voice",
+        slash: {
+          name: "voice-lang-es",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceLang(() => "es")
+          toast.show({ variant: "success", message: "Voice language set to Spanish", duration: 2500 })
+        },
+      },
+      {
+        title: "Voice language: English",
+        value: "voice.lang.en",
+        category: "Voice",
+        slash: {
+          name: "voice-lang-en",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceLang(() => "en")
+          toast.show({ variant: "success", message: "Voice language set to English", duration: 2500 })
+        },
+      },
+      {
+        title: "Voice style: light",
+        value: "voice.style.light",
+        category: "Voice",
+        slash: {
+          name: "voice-style-light",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceStyle(() => "light")
+          toast.show({ variant: "success", message: "Voice style set to light", duration: 2500 })
+        },
+      },
+      {
+        title: "Voice style: strong",
+        value: "voice.style.strong",
+        category: "Voice",
+        slash: {
+          name: "voice-style-strong",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceStyle(() => "strong")
+          toast.show({ variant: "success", message: "Voice style set to strong", duration: 2500 })
         },
       },
       {
@@ -1215,6 +1280,10 @@ export function Prompt(props: PromptProps) {
                         <text fg={theme.textMuted}>Voice on</text>
                       </Match>
                     </Switch>
+                    <Show when={voiceSend()}>
+                      <text fg={theme.textMuted}>·</text>
+                      <text fg={theme.warning}>Auto send</text>
+                    </Show>
                   </Show>
                 </box>
               </Show>
