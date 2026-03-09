@@ -9,7 +9,7 @@ import tempfile
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default=os.environ.get("OPENCODE_VOICE_LOCAL_MODEL", "base"))
+    parser.add_argument("--model", default=os.environ.get("OPENCODE_VOICE_LOCAL_MODEL", "large-v3"))
     parser.add_argument("--language", default=None)
     parser.add_argument("--temperature", type=float, default=0.0)
     args = parser.parse_args()

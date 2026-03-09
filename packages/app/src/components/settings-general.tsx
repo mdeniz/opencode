@@ -287,6 +287,16 @@ export const SettingsGeneral: Component = () => {
     { id: "auto", label: language.t("settings.general.voice.stt.auto") },
     { id: "remote", label: language.t("settings.general.voice.stt.remote") },
   ]
+  const langOptions = [
+    { id: "auto", label: language.t("settings.general.voice.language.auto") },
+    { id: "es", label: language.t("settings.general.voice.language.es") },
+    { id: "en", label: language.t("settings.general.voice.language.en") },
+  ]
+  const modelOptions = [
+    { id: "small", label: language.t("settings.general.voice.model.small") },
+    { id: "medium", label: language.t("settings.general.voice.model.medium") },
+    { id: "large-v3", label: language.t("settings.general.voice.model.large") },
+  ]
 
   const testInput = async () => {
     setStore("voiceInputTesting", true)
@@ -516,6 +526,40 @@ export const SettingsGeneral: Component = () => {
             value={(item) => item.id}
             label={(item) => item.label}
             onSelect={(item) => item && settings.voice.setStt(item.id as "auto" | "local" | "remote")}
+            variant="secondary"
+            size="small"
+            triggerVariant="settings"
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.voice.language.title")}
+          description={language.t("settings.general.voice.language.description")}
+        >
+          <Select
+            data-action="settings-voice-language"
+            options={langOptions}
+            current={langOptions.find((item) => item.id === settings.voice.language())}
+            value={(item) => item.id}
+            label={(item) => item.label}
+            onSelect={(item) => item && settings.voice.setLanguage(item.id as "auto" | "es" | "en")}
+            variant="secondary"
+            size="small"
+            triggerVariant="settings"
+          />
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.voice.model.title")}
+          description={language.t("settings.general.voice.model.description")}
+        >
+          <Select
+            data-action="settings-voice-model"
+            options={modelOptions}
+            current={modelOptions.find((item) => item.id === settings.voice.model())}
+            value={(item) => item.id}
+            label={(item) => item.label}
+            onSelect={(item) => item && settings.voice.setModel(item.id as "small" | "medium" | "large-v3")}
             variant="secondary"
             size="small"
             triggerVariant="settings"

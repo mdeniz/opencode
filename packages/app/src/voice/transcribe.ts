@@ -12,9 +12,10 @@ export async function transcribeVoice(input: {
   server: ServerConnection.HttpBase
   audio: Blob
   language?: string
+  model?: string
   mode?: "auto" | "local" | "remote"
 }) {
-  const lang = input.language?.split(/[-_]/)[0]
+  const lang = input.language === "auto" ? "auto" : input.language?.split(/[-_]/)[0]
   const bytes = new Uint8Array(await input.audio.arrayBuffer())
   let binary = ""
   const size = 0x8000
@@ -29,6 +30,7 @@ export async function transcribeVoice(input: {
       audio,
       mime: input.audio.type || "audio/webm",
       language: lang,
+      model: input.model,
     }),
   })
 

@@ -1045,7 +1045,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const res = await transcribeVoice({
       server: server.current!.http,
       audio: out.blob,
-      language: language.intl(),
+      language: settings.voice.language(),
+      model: settings.voice.model(),
       mode: settings.voice.stt(),
     }).catch((err) => {
       showToast({

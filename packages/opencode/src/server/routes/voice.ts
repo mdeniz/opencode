@@ -29,12 +29,13 @@ const Resp = z
 
 async function local(body: z.infer<typeof Body>) {
   const bin = process.env.OPENCODE_VOICE_LOCAL_PYTHON || "python3"
+  const model = body.model || process.env.OPENCODE_VOICE_LOCAL_MODEL || "large-v3"
   const proc = Process.spawn(
     [
       bin,
       path.join(import.meta.dir, "..", "voice", "local.py"),
       "--model",
-      process.env.OPENCODE_VOICE_LOCAL_MODEL || "base",
+      model,
       ...(body.language && body.language !== "auto" ? ["--language", body.language] : []),
     ],
     {
@@ -102,7 +103,7 @@ export const VoiceRoutes = lazy(() =>
           return c.json({
             text,
             providerID: "local",
-            modelID: process.env.OPENCODE_VOICE_LOCAL_MODEL || "base",
+            modelID: body.model || process.env.OPENCODE_VOICE_LOCAL_MODEL || "large-v3",
           })
         }
         if (mode === "local") {
