@@ -793,6 +793,8 @@ export const dict = {
   "toast.voice.unsupported.description": "This browser does not expose speech recognition for OpenCode.",
   "toast.voice.error.title": "Voice input failed",
   "toast.voice.error.description": "Speech recognition returned: {{error}}",
+  "toast.voice.empty.title": "No speech recognized",
+  "toast.voice.empty.description": "The recording reached Whisper, but no transcript text was produced. Try speaking longer or louder.",
 
   "settings.shortcuts.title": "Keyboard shortcuts",
   "settings.shortcuts.reset.button": "Reset to defaults",

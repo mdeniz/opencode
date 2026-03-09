@@ -42,6 +42,7 @@ Those can build on top of the app experience later.
 - `local` runs a bundled Python helper around `faster-whisper` if available on the machine.
 - `auto` tries local first, then falls back to remote provider transcription.
 - `local` also needs audio decoding support for the recorded browser format, which typically means `ffmpeg` available on the host.
+- If Whisper returns an empty transcript, the UI now surfaces that explicitly instead of silently returning to `Voice ready`.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
 - Browser speech recognition APIs do not expose a standard way to bind recognition to a specific microphone, so the microphone picker is currently advisory only.
 - Browser speech synthesis also does not provide reliable speaker routing. True output routing would require an `HTMLAudioElement.setSinkId()` pipeline or desktop-native support.

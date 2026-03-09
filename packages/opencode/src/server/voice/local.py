@@ -11,6 +11,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default=os.environ.get("OPENCODE_VOICE_LOCAL_MODEL", "base"))
     parser.add_argument("--language", default=None)
+    parser.add_argument("--temperature", type=float, default=0.0)
     args = parser.parse_args()
 
     payload = json.loads(sys.stdin.read() or "{}")
@@ -33,7 +34,14 @@ def main() -> int:
 
     try:
       model = WhisperModel(args.model, device="cpu", compute_type="int8")
-      segs, _ = model.transcribe(name, language=args.language if args.language and args.language != "auto" else None)
+      segs, _ = model.transcribe(
+          name,
+          language=args.language if args.language and args.language != "auto" else None,
+          vad_filter=True,
+          vad_parameters={"min_silence_duration_ms": 300},
+          beam_size=5,
+          temperature=args.temperature,
+        )
       text = " ".join(seg.text.strip() for seg in segs).strip()
       print(json.dumps({"text": text}))
       return 0

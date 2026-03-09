@@ -1057,8 +1057,16 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     })
     console.info("voice transcription", res)
     setStore("voiceDraft", "")
-    if (!res?.text) return
-    if (!appendVoice(res.text)) return
+    const text = res?.text?.trim()
+    if (!text) {
+      showToast({
+        title: language.t("toast.voice.empty.title"),
+        description: language.t("toast.voice.empty.description"),
+        variant: "default",
+      })
+      return
+    }
+    if (!appendVoice(text)) return
     setStore("voiceAdded", (count) => count + 1)
     if (!settings.voice.autoSend()) return
     queueMicrotask(() => {
