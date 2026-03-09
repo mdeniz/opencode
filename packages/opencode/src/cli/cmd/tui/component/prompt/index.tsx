@@ -274,12 +274,21 @@ export function Prompt(props: PromptProps) {
             toast.show({ variant: "warning", message: "No voice audio captured", duration: 3000 })
             return
           }
-          const fn = (sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client.post.bind(
-            (sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client,
-          )
+          const fn = (sdk.client as unknown as {
+            client: {
+              post: (input: {
+                url: string
+                body: unknown
+                headers: Record<string, string>
+                responseStyle: "data"
+                parseAs: "json"
+                fetch?: typeof fetch
+              }) => Promise<{ text?: string; errors?: { message: string }[] } | undefined>
+            }
+          }).client.post.bind((sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client)
           const data = await fn(
             {
-              url: `${sdk.url}/voice/transcribe?mode=auto`,
+              url: "/voice/transcribe?mode=auto",
               body: {
                 audio: Buffer.from(audio).toString("base64"),
                 mime: "audio/wav",
@@ -289,6 +298,7 @@ export function Prompt(props: PromptProps) {
               headers: { "content-type": "application/json" },
               responseStyle: "data",
               parseAs: "json",
+              fetch: undefined,
             },
           )
             .then(async (x: unknown) => {
