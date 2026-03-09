@@ -283,16 +283,18 @@ export function Prompt(props: PromptProps) {
           })
             .then(async (x) => {
               const json = (await x.json()) as { text?: string; errors?: { message: string }[] }
-              await logVoice("transcribe-response", json).catch(() => undefined)
+              await logVoice("transcribe-response", { ok: x.ok, status: x.status, json }).catch(() => undefined)
               return json
             })
             .catch(() => undefined)
           setStore2("processing", false)
           const text = data?.text?.trim()
+          await logVoice("transcribe-final", { text, raw: data }).catch(() => undefined)
           if (!text) {
             toast.show({ variant: "warning", message: data?.errors?.[0]?.message || "No speech recognized", duration: 4000 })
             return
           }
+          await logVoice("transcribe-insert", { text }).catch(() => undefined)
           input.insertText(text)
           setStore("prompt", "input", (value) => value + text)
           input.gotoBufferEnd()
