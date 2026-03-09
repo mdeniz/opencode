@@ -1536,7 +1536,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   <IconButton
                     data-action="prompt-voice"
                     type="button"
-                    icon="speech-bubble"
+                    icon={player.speaking() ? "stop" : "speech-bubble"}
                     variant={player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
                     class="size-8"
                     style={{
