@@ -1092,6 +1092,10 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   }
 
   const toggleVoice = () => {
+    if (player.speaking()) {
+      player.stop()
+      return
+    }
     if (input.running()) {
       void stopVoice()
       return
@@ -1162,13 +1166,23 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     },
     {
       id: "voice.toggle",
-      title: input.running() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
+        title: input.running() ? language.t("command.voice.disable") : language.t("command.voice.enable"),
       description: language.t("command.voice.toggle.description"),
       category: language.t("command.category.session"),
       keybind: "mod+shift+v",
       slash: "voice",
       disabled: store.mode !== "normal" || working() || store.voiceBusy,
       onSelect: toggleVoice,
+    },
+    {
+      id: "voice.stopSpeaking",
+      title: language.t("command.voice.stopSpeaking"),
+      description: language.t("command.voice.stopSpeaking.description"),
+      category: language.t("command.category.session"),
+      keybind: "mod+shift+.",
+      slash: "voice-stop",
+      disabled: !player.speaking(),
+      onSelect: () => player.stop(),
     },
   ])
 
@@ -1510,7 +1524,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 <Tooltip
                   placement="top"
                   value={
-                    input.running()
+                    player.speaking()
+                      ? language.t("prompt.action.voiceStopSpeaking")
+                      : input.running()
                       ? language.t("prompt.action.voiceStop")
                       : settings.voice.enabled()
                         ? language.t("prompt.action.voiceStart")
@@ -1521,7 +1537,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     data-action="prompt-voice"
                     type="button"
                     icon="speech-bubble"
-                    variant={input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
+                    variant={player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
                     class="size-8"
                     style={{
                       opacity: buttonsSpring(),
@@ -1531,8 +1547,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     onClick={toggleVoice}
                     disabled={store.mode !== "normal" || working() || store.voiceBusy}
                     tabIndex={store.mode === "normal" ? undefined : -1}
-                    aria-label={input.running() ? language.t("prompt.action.voiceStop") : language.t("prompt.action.voiceStart")}
-                    aria-pressed={input.running()}
+                    aria-label={player.speaking()
+                      ? language.t("prompt.action.voiceStopSpeaking")
+                      : input.running()
+                        ? language.t("prompt.action.voiceStop")
+                        : language.t("prompt.action.voiceStart")}
+                    aria-pressed={player.speaking() || input.running()}
                   />
                 </Tooltip>
               </Show>

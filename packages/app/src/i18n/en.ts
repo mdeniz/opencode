@@ -90,6 +90,8 @@ export const dict = {
   "command.voice.enable": "Enable voice mode",
   "command.voice.disable": "Disable voice mode",
   "command.voice.toggle.description": "Toggle microphone input and spoken replies",
+  "command.voice.stopSpeaking": "Stop speaking",
+  "command.voice.stopSpeaking.description": "Stop text-to-speech playback without starting the microphone",
 
   "palette.search.placeholder": "Search files, commands, and sessions",
   "palette.empty": "No results found",
@@ -280,6 +282,7 @@ export const dict = {
   "prompt.action.voiceEnable": "Enable voice mode",
   "prompt.action.voiceStart": "Start voice input",
   "prompt.action.voiceStop": "Stop voice input",
+  "prompt.action.voiceStopSpeaking": "Stop speaking",
   "prompt.voice.status.ready": "Voice ready",
   "prompt.voice.status.listening": "Listening",
   "prompt.voice.status.processing": "Processing speech",
