@@ -108,7 +108,28 @@ export async function speakText(text: string, file: string) {
   const ffmpeg = await Bun.which("ffmpeg")
   const ffplay = await Bun.which("ffplay")
   if (!ffmpeg || !ffplay) throw new Error("ffmpeg and ffplay are required for CLI voice playback.")
-  const voice = detectLang(text) === "es" ? "slt" : "kal"
+  const lang = detectLang(text)
+  const py = (await Bun.which("python3")) || (await Bun.which("python"))
+  const home = process.env.HOME
+  const site = home ? path.join(home, ".local", "lib", "python3.10", "site-packages") : undefined
+  if (py && site) {
+    const out = await Process.run(
+      [py, "-m", "edge_tts", "--text", text, "--write-media", file, "--voice", lang === "es" ? "es-ES-AlvaroNeural" : "en-US-AndrewNeural"],
+      {
+        env: {
+          PYTHONPATH: site,
+        },
+        nothrow: true,
+      },
+    )
+    if (out.code === 0) {
+      return Process.spawn([ffplay, "-nodisp", "-autoexit", "-loglevel", "quiet", file], {
+        stdout: "ignore",
+        stderr: "ignore",
+      })
+    }
+  }
+  const voice = lang === "es" ? "slt" : "kal"
   await Process.run([ffmpeg, "-y", "-f", "lavfi", "-i", `flite=text='${text.replace(/'/g, " ")}':voice=${voice}`, file], { nothrow: true })
   return Process.spawn([ffplay, "-nodisp", "-autoexit", "-loglevel", "quiet", file], {
     stdout: "ignore",

@@ -52,7 +52,7 @@ Those can build on top of the app experience later.
 
 - The CLI/TUI reuses the same `/voice/transcribe` backend route.
 - Recording uses local terminal audio tools (`pw-record` or `arecord`).
-- Playback uses `ffmpeg` + `ffplay`.
+- Playback prefers `edge-tts` when available and falls back to `ffmpeg` + `ffplay` with `flite`.
 - TUI supports a persistent `voice_send` toggle via `/voice-send` to auto-submit the prompt immediately after transcription.
 - TUI also exposes slash commands for voice language and response style: `/voice-lang-auto`, `/voice-lang-es`, `/voice-lang-en`, `/voice-style-light`, `/voice-style-strong`.
 - TUI exposes `/voice-help` and `/voice-hands` for discoverability and a more hands-free loop.
