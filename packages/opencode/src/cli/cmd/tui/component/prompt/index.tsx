@@ -34,7 +34,8 @@ import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
-import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice, compactAudio, watch } from "../../voice"
+import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice, compactAudio, watch, listDevices } from "../../voice"
+import { DialogVoice } from "../dialog-voice"
 import { Spinner } from "../spinner"
 
 export type PromptProps = {
@@ -86,6 +87,8 @@ export function Prompt(props: PromptProps) {
   const [voiceHands, setVoiceHands] = kv.signal("voice_hands", false)
   const [voiceSilence, setVoiceSilence] = kv.signal("voice_silence", true)
   const [voiceSilenceMs, setVoiceSilenceMs] = kv.signal("voice_silence_ms", 2200)
+  const [voiceInput, setVoiceInput] = kv.signal("voice_input_device", "default")
+  const [voiceOutput, setVoiceOutput] = kv.signal("voice_output_device", "default")
   const [store2, setStore2] = createStore<{
     recording: boolean
     processing: boolean
@@ -117,6 +120,7 @@ export function Prompt(props: PromptProps) {
     if (voiceHands()) {
       await ensureVoiceDir().catch(() => undefined)
       const file = voiceFile("input.wav")
+      process.env.OPENCODE_VOICE_INPUT = voiceInput()
       rec = await recordAudio(file).catch(() => undefined)
       if (rec) setStore2("recording", true)
     }
@@ -256,6 +260,8 @@ export function Prompt(props: PromptProps) {
           if (!store2.recording) {
             await ensureVoiceDir().catch(() => undefined)
             const file = voiceFile("input.wav")
+            process.env.OPENCODE_VOICE_INPUT = voiceInput()
+            process.env.OPENCODE_VOICE_OUTPUT = voiceOutput()
             rec = await recordAudio(file).catch((err) => {
               toast.show({ variant: "error", message: err instanceof Error ? err.message : String(err), duration: 4000 })
               return undefined
@@ -446,6 +452,18 @@ export function Prompt(props: PromptProps) {
               "/voice-style-light and /voice-style-strong tune spoken response formatting",
             ].join("\n\n"),
           )
+        },
+      },
+      {
+        title: "Voice devices",
+        value: "voice.devices",
+        category: "Voice",
+        slash: {
+          name: "voice-devices",
+        },
+        onSelect: (x) => {
+          x.clear()
+          dialog.replace(() => <DialogVoice />)
         },
       },
       {

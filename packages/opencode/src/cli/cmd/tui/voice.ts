@@ -42,12 +42,37 @@ export function voiceText(style: "light" | "strong", lang: "auto" | "es" | "en")
   return VOICE_NOTE[style][lang]
 }
 
+export function listDevices() {
+  const text = Bun.spawnSync(["wpctl", "status"], { stdout: "pipe", stderr: "ignore" }).stdout.toString()
+  const inputs = [{ id: "default", title: "System default" }]
+  const outputs = [{ id: "default", title: "System default" }]
+  let mode: "input" | "output" | undefined
+  for (const line of text.split("\n")) {
+    if (line.includes("├─ Sinks:")) {
+      mode = "output"
+      continue
+    }
+    if (line.includes("├─ Sources:")) {
+      mode = "input"
+      continue
+    }
+    if (!mode) continue
+    const m = line.match(/\*?\s*(\d+)\.\s+(.+?)\s+\[vol:/)
+    if (!m) continue
+    const item = { id: m[1], title: m[2].trim() }
+    if (mode === "input") inputs.push(item)
+    if (mode === "output") outputs.push(item)
+  }
+  return { inputs, outputs }
+}
+
 export async function recordAudio(file: string) {
   const bin = process.platform === "linux" ? (await Bun.which("pw-record")) || (await Bun.which("arecord")) : undefined
   if (!bin) throw new Error("No terminal audio recorder found. Install pw-record or arecord.")
+  const source = process.env.OPENCODE_VOICE_INPUT || "default"
   const args =
     path.basename(bin) === "pw-record"
-      ? [file, "--rate", "16000", "--channels", "1", "--format", "s16"]
+      ? [file, "--rate", "16000", "--channels", "1", "--format", "s16", ...(source !== "default" ? ["--target", source] : [])]
       : ["-q", "-f", "S16_LE", "-r", "16000", "-c", "1", file]
   return Process.spawn([bin, ...args], {
     stdout: "ignore",
@@ -109,6 +134,7 @@ export async function speakText(text: string, file: string) {
   const ffplay = await Bun.which("ffplay")
   if (!ffmpeg || !ffplay) throw new Error("ffmpeg and ffplay are required for CLI voice playback.")
   const lang = detectLang(text)
+  const sink = process.env.OPENCODE_VOICE_OUTPUT || "default"
   const py = (await Bun.which("python3")) || (await Bun.which("python"))
   const home = process.env.HOME
   const site = home ? path.join(home, ".local", "lib", "python3.10", "site-packages") : undefined
@@ -123,7 +149,7 @@ export async function speakText(text: string, file: string) {
       },
     )
     if (out.code === 0) {
-      return Process.spawn([ffplay, "-nodisp", "-autoexit", "-loglevel", "quiet", file], {
+      return Process.spawn([ffplay, ...(sink !== "default" ? ["-f", "pulse", "-sink", sink] : []), "-nodisp", "-autoexit", "-loglevel", "quiet", file], {
         stdout: "ignore",
         stderr: "ignore",
       })
@@ -131,7 +157,7 @@ export async function speakText(text: string, file: string) {
   }
   const voice = lang === "es" ? "slt" : "kal"
   await Process.run([ffmpeg, "-y", "-f", "lavfi", "-i", `flite=text='${text.replace(/'/g, " ")}':voice=${voice}`, file], { nothrow: true })
-  return Process.spawn([ffplay, "-nodisp", "-autoexit", "-loglevel", "quiet", file], {
+  return Process.spawn([ffplay, ...(sink !== "default" ? ["-f", "pulse", "-sink", sink] : []), "-nodisp", "-autoexit", "-loglevel", "quiet", file], {
     stdout: "ignore",
     stderr: "ignore",
   })
