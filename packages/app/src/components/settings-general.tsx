@@ -293,6 +293,7 @@ export const SettingsGeneral: Component = () => {
     { id: "en", label: language.t("settings.general.voice.language.en") },
   ]
   const modelOptions = [
+    { id: "base", label: language.t("settings.general.voice.model.base") },
     { id: "small", label: language.t("settings.general.voice.model.small") },
     { id: "medium", label: language.t("settings.general.voice.model.medium") },
     { id: "large-v3", label: language.t("settings.general.voice.model.large") },
@@ -559,7 +560,7 @@ export const SettingsGeneral: Component = () => {
             current={modelOptions.find((item) => item.id === settings.voice.model())}
             value={(item) => item.id}
             label={(item) => item.label}
-            onSelect={(item) => item && settings.voice.setModel(item.id as "small" | "medium" | "large-v3")}
+            onSelect={(item) => item && settings.voice.setModel(item.id as "base" | "small" | "medium" | "large-v3")}
             variant="secondary"
             size="small"
             triggerVariant="settings"
@@ -582,8 +583,8 @@ export const SettingsGeneral: Component = () => {
           >
             <Select
               data-action="settings-voice-silence"
-              options={[500, 1000, 1500, 2000, 2500].map((value) => ({ value, label: `${value}ms` }))}
-              current={[500, 1000, 1500, 2000, 2500]
+              options={[1000, 1500, 2200, 3000, 4000].map((value) => ({ value, label: `${value}ms` }))}
+              current={[1000, 1500, 2200, 3000, 4000]
                 .map((value) => ({ value, label: `${value}ms` }))
                 .find((item) => item.value === settings.voice.silenceMs())}
               value={(item) => String(item.value)}

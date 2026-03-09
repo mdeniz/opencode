@@ -44,7 +44,9 @@ Those can build on top of the app experience later.
 - `local` also needs audio decoding support for the recorded browser format, which typically means `ffmpeg` available on the host.
 - If Whisper returns an empty transcript, the UI now surfaces that explicitly instead of silently returning to `Voice ready`.
 - Voice settings now let you pick both transcription language (`auto`, `es`, `en`) and local Whisper model quality.
-- The local default is now `large-v3` for best accuracy, especially for short natural speech and language switching.
+- The local default is now `base`, which is the best latency/quality balance we measured locally.
+- On this machine, changing input gain between roughly `0.1x` and `2.0x` did not materially change `base` recognition quality on the same sample; timing and transcript stayed almost identical.
+- In practice, short phrase cutoffs and language choice matter more than simple volume changes.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
 - Browser speech recognition APIs do not expose a standard way to bind recognition to a specific microphone, so the microphone picker is currently advisory only.
 - Browser speech synthesis also does not provide reliable speaker routing. True output routing would require an `HTMLAudioElement.setSinkId()` pipeline or desktop-native support.

@@ -45,7 +45,7 @@ export interface Settings {
     autoSpeak: boolean
     stt: "auto" | "local" | "remote"
     language: "auto" | "es" | "en"
-    model: "small" | "medium" | "large-v3"
+    model: "base" | "small" | "medium" | "large-v3"
     input: string
     output: string
     autoStop: boolean
@@ -91,11 +91,11 @@ const defaultSettings: Settings = {
     autoSpeak: true,
     stt: "auto",
     language: "auto",
-    model: "large-v3",
+    model: "base",
     input: "default",
     output: "default",
     autoStop: true,
-    silenceMs: 1500,
+    silenceMs: 2200,
   },
 }
 
@@ -276,7 +276,7 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
           setStore("voice", "language", value)
         },
         model: withFallback(() => store.voice?.model, defaultSettings.voice.model),
-        setModel(value: "small" | "medium" | "large-v3") {
+        setModel(value: "base" | "small" | "medium" | "large-v3") {
           setStore("voice", "model", value)
         },
         input: withFallback(() => store.voice?.input, defaultSettings.voice.input),
