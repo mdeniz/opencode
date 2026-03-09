@@ -472,6 +472,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     prompt.set([...items, ...imgs], len)
     console.info("appendVoice:set", { items: [...items, ...imgs], len })
     requestAnimationFrame(() => {
+      if (!editorRef?.isConnected) return
       editorRef.focus()
       setCursorPosition(editorRef, len)
       queueScroll()
@@ -1031,7 +1032,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const stopVoice = async () => {
     setStore("voiceBusy", true)
-    const out = await input.record(2500)
+    const out = await input.finish()
     setStore("voiceBusy", false)
     if (!out) {
       showToast({
@@ -1087,7 +1088,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceDraft", "")
     setStore("voiceTick", (value) => value + 1)
     editorRef.focus()
-    void input.start()
+    void input.begin()
   }
 
   const toggleVoice = () => {
@@ -1100,7 +1101,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   createEffect(() => {
     if (settings.voice.enabled()) return
-    if (input.running()) void input.stop()
+    if (input.running()) void input.cancel()
     if (player.speaking()) player.stop()
     if (store.voiceDraft) setStore("voiceDraft", "")
   })
@@ -1113,7 +1114,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     setStore("voiceHydrated", false)
     setStore("voiceDraft", "")
     player.stop()
-    if (input.running()) void input.stop()
+    if (input.running()) void input.cancel()
   })
 
   createEffect(() => {

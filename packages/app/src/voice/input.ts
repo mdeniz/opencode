@@ -43,6 +43,7 @@ export function createVoiceInput(opts?: Opts) {
   let rec: MediaRecorder | undefined
   let chunks: Blob[] = []
   let silence: number | undefined
+  let mime: string | undefined
 
   const supported = () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia
 
@@ -56,12 +57,18 @@ export function createVoiceInput(opts?: Opts) {
     rec = undefined
     chunks = []
     silence = undefined
+    mime = undefined
     const audio = ctx
     ctx = undefined
     await audio?.close().catch(() => undefined)
     setStore("running", false)
     setStore("level", 0)
     setStore("meter", 0)
+  }
+
+  const cancel = async () => {
+    if (rec && rec.state !== "inactive") rec.stop()
+    await stop()
   }
 
   const sample = () => {
@@ -137,22 +144,27 @@ export function createVoiceInput(opts?: Opts) {
     return peak
   }
 
-  const record = async (ms = 5000) => {
+  const begin = async () => {
     const ok = stream ? true : await start()
-    if (!ok || !stream) return
+    if (!ok || !stream) return false
     if (typeof MediaRecorder === "undefined") {
       setStore("error", "unsupported")
       await stop()
-      return
+      return false
     }
+    if (rec && rec.state !== "inactive") return true
     chunks = []
-    const mime = preferredMime()
+    mime = preferredMime()
     rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream)
     rec.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) chunks.push(event.data)
     }
     rec.start()
-    await new Promise((resolve) => setTimeout(resolve, ms))
+    return true
+  }
+
+  const finish = async () => {
+    if (!rec) return
     if (rec.state !== "inactive") {
       const done = new Promise<void>((resolve) => {
         if (!rec) return resolve()
@@ -161,10 +173,17 @@ export function createVoiceInput(opts?: Opts) {
       rec.stop()
       await done
     }
-    const blob = chunks.length ? new Blob(chunks, { type: mime ?? chunks[0]?.type ?? "audio/webm" }) : undefined
+    const blob = chunks.length ? new Blob(chunks, { type: rec.mimeType || mime || chunks[0]?.type || "audio/webm" }) : undefined
     const peak = store.peak
     await stop()
     return blob ? { blob, peak } : undefined
+  }
+
+  const record = async (ms = 5000) => {
+    const ok = await begin()
+    if (!ok) return
+    await new Promise((resolve) => setTimeout(resolve, ms))
+    return finish()
   }
 
   onCleanup(() => {
@@ -179,7 +198,10 @@ export function createVoiceInput(opts?: Opts) {
     peak: () => store.peak,
     error: () => store.error,
     start,
+    begin,
     stop,
+    cancel,
+    finish,
     test,
     record,
   }
