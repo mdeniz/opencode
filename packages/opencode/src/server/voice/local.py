@@ -27,7 +27,8 @@ def main() -> int:
       return 1
 
     raw = base64.b64decode(audio)
-    suffix = ".ogg" if "ogg" in payload.get("mime", "") else ".m4a" if "mp4" in payload.get("mime", "") else ".webm"
+    mime = payload.get("mime", "")
+    suffix = ".wav" if "wav" in mime else ".ogg" if "ogg" in mime else ".m4a" if "mp4" in mime else ".webm"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
       tmp.write(raw)
       name = tmp.name

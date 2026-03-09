@@ -255,10 +255,10 @@ export function Prompt(props: PromptProps) {
             return
           }
           rec?.kill("SIGINT")
+          await rec?.exited.catch(() => 1)
           setStore2("recording", false)
           setStore2("processing", true)
           const file = voiceFile("input.wav")
-          await rec?.exited.catch(() => 1)
           const audio = await Bun.file(file).bytes().catch(() => undefined)
           if (!audio?.length) {
             setStore2("processing", false)
