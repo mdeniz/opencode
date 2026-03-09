@@ -274,22 +274,29 @@ export function Prompt(props: PromptProps) {
             toast.show({ variant: "warning", message: "No voice audio captured", duration: 3000 })
             return
           }
-          const data = await fetch(`${sdk.url}/voice/transcribe?mode=auto`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              audio: Buffer.from(audio).toString("base64"),
-              mime: "audio/wav",
-              language: voiceLang(),
-              model: "base",
-            }),
-          })
-            .then(async (x) => {
-              const json = (await x.json()) as { text?: string; errors?: { message: string }[] }
-              await logVoice("transcribe-response", { ok: x.ok, status: x.status, json }).catch(() => undefined)
-              return json
+          const data = await (sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client
+            .post({
+              url: `${sdk.url}/voice/transcribe?mode=auto`,
+              body: {
+                audio: Buffer.from(audio).toString("base64"),
+                mime: "audio/wav",
+                language: voiceLang(),
+                model: "base",
+              },
+              headers: { "content-type": "application/json" },
+              responseStyle: "data",
+              parseAs: "json",
             })
-            .catch(() => undefined)
+            .then(async (x: unknown) => {
+              await logVoice("transcribe-response", { ok: true, json: x }).catch(() => undefined)
+              return x as { text?: string; errors?: { message: string }[] } | undefined
+            })
+            .catch(async (err: unknown) => {
+              await logVoice("transcribe-response", { ok: false, error: err instanceof Error ? err.message : String(err) }).catch(
+                () => undefined,
+              )
+              return undefined
+            })
           setStore2("processing", false)
           const text = data?.text?.trim()
           await logVoice("transcribe-final", { text, raw: data }).catch(() => undefined)
