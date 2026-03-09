@@ -14,6 +14,7 @@ export async function transcribeVoice(input: {
   language?: string
   mode?: "auto" | "local" | "remote"
 }) {
+  const lang = input.language?.split(/[-_]/)[0]
   const bytes = new Uint8Array(await input.audio.arrayBuffer())
   let binary = ""
   const size = 0x8000
@@ -27,7 +28,7 @@ export async function transcribeVoice(input: {
     body: JSON.stringify({
       audio,
       mime: input.audio.type || "audio/webm",
-      language: input.language,
+      language: lang,
     }),
   })
 
