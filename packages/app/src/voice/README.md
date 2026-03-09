@@ -38,6 +38,10 @@ Those can build on top of the app experience later.
 - Dictation no longer depends on the browser Web Speech API. The app now records microphone audio with `MediaRecorder`, sends it to OpenCode server-side transcription, and inserts the returned text.
 - This matches the article's main architectural idea: own the audio pipeline, batch recorded chunks, transcribe server-side, and keep browser APIs only for capture/playback.
 - The current implementation also starts the VAD-style groundwork from the article: raw audio level tracking, silence-based auto-stop, and selected-device capture reused across settings and composer voice mode.
+- OpenCode now exposes three STT modes in settings: `local`, `auto`, and `remote`.
+- `local` runs a bundled Python helper around `faster-whisper` if available on the machine.
+- `auto` tries local first, then falls back to remote provider transcription.
+- `local` also needs audio decoding support for the recorded browser format, which typically means `ffmpeg` available on the host.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
 - Browser speech recognition APIs do not expose a standard way to bind recognition to a specific microphone, so the microphone picker is currently advisory only.
 - Browser speech synthesis also does not provide reliable speaker routing. True output routing would require an `HTMLAudioElement.setSinkId()` pipeline or desktop-native support.

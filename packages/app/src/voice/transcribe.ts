@@ -12,6 +12,7 @@ export async function transcribeVoice(input: {
   server: ServerConnection.HttpBase
   audio: Blob
   language?: string
+  mode?: "auto" | "local" | "remote"
 }) {
   const bytes = new Uint8Array(await input.audio.arrayBuffer())
   let binary = ""
@@ -20,7 +21,7 @@ export async function transcribeVoice(input: {
     binary += String.fromCharCode(...bytes.subarray(i, i + size))
   }
   const audio = btoa(binary)
-  const res = await fetch(`${input.server.url.replace(/\/$/, "")}/voice/transcribe`, {
+  const res = await fetch(`${input.server.url.replace(/\/$/, "")}/voice/transcribe?mode=${input.mode || "auto"}`, {
     method: "POST",
     headers: headers(input.server),
     body: JSON.stringify({

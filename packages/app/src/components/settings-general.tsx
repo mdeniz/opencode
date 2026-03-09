@@ -282,6 +282,11 @@ export const SettingsGeneral: Component = () => {
     const items = kind === "audioinput" ? voice.inputs() : voice.outputs()
     return [{ id: "default", label: language.t("settings.general.voice.device.default") }, ...items]
   }
+  const sttOptions = [
+    { id: "local", label: language.t("settings.general.voice.stt.local") },
+    { id: "auto", label: language.t("settings.general.voice.stt.auto") },
+    { id: "remote", label: language.t("settings.general.voice.stt.remote") },
+  ]
 
   const testInput = async () => {
     setStore("voiceInputTesting", true)
@@ -498,6 +503,23 @@ export const SettingsGeneral: Component = () => {
           <div data-action="settings-voice-auto-speak">
             <Switch checked={settings.voice.autoSpeak()} onChange={(checked) => settings.voice.setAutoSpeak(checked)} />
           </div>
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.general.voice.stt.title")}
+          description={language.t("settings.general.voice.stt.description")}
+        >
+          <Select
+            data-action="settings-voice-stt"
+            options={sttOptions}
+            current={sttOptions.find((item) => item.id === settings.voice.stt())}
+            value={(item) => item.id}
+            label={(item) => item.label}
+            onSelect={(item) => item && settings.voice.setStt(item.id as "auto" | "local" | "remote")}
+            variant="secondary"
+            size="small"
+            triggerVariant="settings"
+          />
         </SettingsRow>
 
         <SettingsRow

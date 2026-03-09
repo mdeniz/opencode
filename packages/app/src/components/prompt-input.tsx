@@ -1043,6 +1043,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       server: server.current!.http,
       audio: out.blob,
       language: language.intl(),
+      mode: settings.voice.stt(),
     }).catch((err) => {
       showToast({
         title: language.t("toast.voice.error.title"),

@@ -6,6 +6,9 @@ import { Provider } from "../../provider/provider"
 import { Auth } from "../../auth"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+import { Process } from "../../util/process"
+import path from "path"
+import { buffer } from "node:stream/consumers"
 
 const Body = z
   .object({
@@ -23,6 +26,35 @@ const Resp = z
     modelID: z.string(),
   })
   .meta({ ref: "VoiceTranscribeResponse" })
+
+async function local(body: z.infer<typeof Body>) {
+  const bin = process.env.OPENCODE_VOICE_LOCAL_PYTHON || "python3"
+  const proc = Process.spawn(
+    [
+      bin,
+      path.join(import.meta.dir, "..", "voice", "local.py"),
+      "--model",
+      process.env.OPENCODE_VOICE_LOCAL_MODEL || "base",
+      ...(body.language && body.language !== "auto" ? ["--language", body.language] : []),
+    ],
+    {
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 120_000,
+    },
+  )
+  proc.stdin?.write(JSON.stringify({ audio: body.audio, mime: body.mime }))
+  proc.stdin?.end()
+  const [code, stdout, stderr] = await Promise.all([
+    proc.exited,
+    proc.stdout ? buffer(proc.stdout).then((x) => x.toString()) : Promise.resolve(""),
+    proc.stderr ? buffer(proc.stderr).then((x) => x.toString()) : Promise.resolve(""),
+  ])
+  const json = JSON.parse(stdout || "{}") as { text?: string; error?: string }
+  if (code !== 0 || json.error) throw new Error(json.error || stderr || "Local transcription failed")
+  return json.text ?? ""
+}
 
 async function resolve() {
   const cfg = await Config.get()
@@ -63,6 +95,27 @@ export const VoiceRoutes = lazy(() =>
     }),
     async (c) => {
       const body = await c.req.json().then((x) => Body.parse(x))
+      const mode = c.req.query("mode") || "local"
+      if (mode !== "remote") {
+        const text = await local(body).catch(() => undefined)
+        if (text !== undefined) {
+          return c.json({
+            text,
+            providerID: "local",
+            modelID: process.env.OPENCODE_VOICE_LOCAL_MODEL || "base",
+          })
+        }
+        if (mode === "local") {
+          return c.json(
+            {
+              data: null,
+              errors: [{ message: "Local Whisper transcription failed. Install faster-whisper and ensure ffmpeg can decode recorded audio." }],
+              success: false,
+            },
+            400,
+          )
+        }
+      }
       const found = await resolve()
       if (!found) {
         const auth = await Auth.all()
