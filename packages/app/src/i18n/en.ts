@@ -283,6 +283,7 @@ export const dict = {
   "prompt.action.voiceStart": "Start voice input",
   "prompt.action.voiceStop": "Stop voice input",
   "prompt.action.voiceStopSpeaking": "Stop speaking",
+  "prompt.action.voiceProcessing": "Processing speech",
   "prompt.voice.status.ready": "Voice ready",
   "prompt.voice.status.listening": "Listening",
   "prompt.voice.status.processing": "Processing speech",

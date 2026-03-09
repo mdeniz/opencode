@@ -24,6 +24,9 @@ type BuildRequestPartsInput = {
   context: ContextFile[]
   images: ImageAttachmentPart[]
   text: string
+  voice?: {
+    language: "auto" | "es" | "en"
+  }
   messageID: string
   sessionID: string
   sessionDirectory: string
@@ -80,6 +83,22 @@ const toOptimisticPart = (part: PromptRequestPart, sessionID: string, messageID:
 
 export function buildRequestParts(input: BuildRequestPartsInput) {
   const requestParts: PromptRequestPart[] = [
+    ...(input.voice
+      ? [
+          {
+            id: Identifier.ascending("part"),
+            type: "text" as const,
+            text:
+              input.voice.language === "en"
+                ? "System note: the user is listening through text to speech. Write for listening. Use short sentences, natural punctuation, and direct phrasing. Avoid long lists, tables, and code blocks unless explicitly requested. Answer in natural English for speech."
+                : input.voice.language === "es"
+                  ? "Nota del sistema: la persona escuchara la respuesta con text to speech. Escribe para ser oido. Usa frases cortas, puntuacion natural y expresiones directas. Evita listas largas, tablas y bloques de codigo salvo que se pidan. Responde en un espanol natural para voz."
+                  : "System note: the user is listening through text to speech. Write for listening, with short sentences, natural punctuation, and direct phrasing. Avoid long lists, tables, and code blocks unless explicitly requested. Match the spoken language naturally.",
+            synthetic: true,
+            ignored: true,
+          } satisfies PromptRequestPart,
+        ]
+      : []),
     {
       id: Identifier.ascending("part"),
       type: "text",

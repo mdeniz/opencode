@@ -42,6 +42,10 @@ type PromptSubmitInput = {
   newSessionWorktree?: Accessor<string | undefined>
   onNewSessionWorktreeReset?: () => void
   onSubmit?: () => void
+  voice?: {
+    enabled: Accessor<boolean>
+    language: Accessor<"auto" | "es" | "en">
+  }
 }
 
 type CommentItem = {
@@ -304,6 +308,11 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       context,
       images,
       text,
+      voice: input.voice?.enabled()
+        ? {
+            language: input.voice.language(),
+          }
+        : undefined,
       sessionID: session.id,
       messageID,
       sessionDirectory,

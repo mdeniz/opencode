@@ -1008,6 +1008,10 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     newSessionWorktree: () => props.newSessionWorktree,
     onNewSessionWorktreeReset: props.onNewSessionWorktreeReset,
     onSubmit: props.onSubmit,
+    voice: {
+      enabled: () => settings.voice.enabled() && settings.voice.autoSpeak(),
+      language: settings.voice.language,
+    },
   })
 
   const player = createVoicePlayer({ lang: language.intl })
@@ -1021,6 +1025,18 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     },
   })
   const meter = () => `${Math.max(4, Math.min(100, input.meter() * 100))}%`
+  const voiceIcon = () => {
+    if (store.voiceBusy) return "models" as const
+    if (player.speaking()) return "stop" as const
+    return "speech-bubble" as const
+  }
+  const voiceLabel = () => {
+    if (store.voiceBusy) return language.t("prompt.action.voiceProcessing")
+    if (player.speaking()) return language.t("prompt.action.voiceStopSpeaking")
+    if (input.running()) return language.t("prompt.action.voiceStop")
+    if (settings.voice.enabled()) return language.t("prompt.action.voiceStart")
+    return language.t("prompt.action.voiceEnable")
+  }
 
   const unsupportedVoice = () => {
     showToast({
@@ -1092,6 +1108,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   }
 
   const toggleVoice = () => {
+    if (store.voiceBusy) return
     if (player.speaking()) {
       player.stop()
       return
@@ -1385,7 +1402,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           onRemove={removeImageAttachment}
           removeLabel={language.t("prompt.attachment.remove")}
         />
-        <Show when={!input.running() && store.voiceDraft}>
+        <Show when={!input.running() && store.voiceDraft && !store.voiceBusy && !settings.voice.autoSend()}>
           <div class="px-3 pt-1 text-12-regular text-text-weak" data-action="prompt-voice-draft">
             {store.voiceDraft}
           </div>
@@ -1395,9 +1412,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             <span
               classList={{
                 "size-2 rounded-full bg-success": input.running(),
-                "size-2 rounded-full bg-warning": !input.running() && !!store.voiceDraft,
+                "size-2 rounded-full bg-warning": store.voiceBusy,
                 "size-2 rounded-full bg-info": !input.running() && player.speaking(),
-                "size-2 rounded-full bg-border": !input.running() && !store.voiceDraft && !player.speaking(),
+                "size-2 rounded-full bg-border": !input.running() && !store.voiceBusy && !player.speaking(),
               }}
             />
             <span>
@@ -1407,8 +1424,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   ? language.t("prompt.voice.status.processing")
                 : player.speaking()
                   ? language.t("prompt.voice.status.speaking")
-                  : store.voiceDraft
-                    ? language.t("prompt.voice.status.processing")
                     : language.t("prompt.voice.status.ready")}
             </span>
             <Show when={input.running()}>
@@ -1524,34 +1539,25 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 <Tooltip
                   placement="top"
                   value={
-                    player.speaking()
-                      ? language.t("prompt.action.voiceStopSpeaking")
-                      : input.running()
-                      ? language.t("prompt.action.voiceStop")
-                      : settings.voice.enabled()
-                        ? language.t("prompt.action.voiceStart")
-                        : language.t("prompt.action.voiceEnable")
+                    voiceLabel()
                   }
                 >
                   <IconButton
                     data-action="prompt-voice"
                     type="button"
-                    icon={player.speaking() ? "stop" : "speech-bubble"}
-                    variant={player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
+                    icon={voiceIcon()}
+                    variant={store.voiceBusy || player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
                     class="size-8"
                     style={{
                       opacity: buttonsSpring(),
                       transform: `scale(${0.95 + buttonsSpring() * 0.05})`,
                       filter: `blur(${(1 - buttonsSpring()) * 2}px)`,
                     }}
+                    classList={{ "animate-spin": store.voiceBusy }}
                     onClick={toggleVoice}
-                    disabled={store.mode !== "normal" || working() || store.voiceBusy}
+                    disabled={store.mode !== "normal" || working()}
                     tabIndex={store.mode === "normal" ? undefined : -1}
-                    aria-label={player.speaking()
-                      ? language.t("prompt.action.voiceStopSpeaking")
-                      : input.running()
-                        ? language.t("prompt.action.voiceStop")
-                        : language.t("prompt.action.voiceStart")}
+                    aria-label={voiceLabel()}
                     aria-pressed={player.speaking() || input.running()}
                   />
                 </Tooltip>
