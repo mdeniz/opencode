@@ -1019,7 +1019,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       void stopVoice()
     },
   })
-  const meter = () => `${Math.max(6, Math.min(100, input.level() * 1200))}%`
+  const meter = () => `${Math.max(4, Math.min(100, input.meter() * 100))}%`
 
   const unsupportedVoice = () => {
     showToast({

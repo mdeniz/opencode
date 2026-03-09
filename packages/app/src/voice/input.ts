@@ -30,6 +30,7 @@ export function createVoiceInput(opts?: Opts) {
   const [store, setStore] = createStore({
     running: false,
     level: 0,
+    meter: 0,
     peak: 0,
     error: "",
   })
@@ -60,6 +61,7 @@ export function createVoiceInput(opts?: Opts) {
     await audio?.close().catch(() => undefined)
     setStore("running", false)
     setStore("level", 0)
+    setStore("meter", 0)
   }
 
   const sample = () => {
@@ -67,13 +69,16 @@ export function createVoiceInput(opts?: Opts) {
     analyser.getByteTimeDomainData(data)
     let sum = 0
     let peak = store.peak
+    let hit = 0
     for (const value of data) {
       const item = Math.abs((value - 128) / 128)
       sum += item * item
+      if (item > hit) hit = item
       if (item > peak) peak = item
     }
     const next = Math.sqrt(sum / data.length)
     setStore("level", store.level * 0.55 + next * 0.45)
+    setStore("meter", Math.max(store.meter * 0.78, Math.min(1, hit * 1.6), Math.min(1, next * 18)))
     setStore("peak", peak)
     const quiet = next < 0.015
     if (quiet && opts?.onSilence && opts?.silence?.()) {
@@ -170,6 +175,7 @@ export function createVoiceInput(opts?: Opts) {
     supported,
     running: () => store.running,
     level: () => store.level,
+    meter: () => store.meter,
     peak: () => store.peak,
     error: () => store.error,
     start,

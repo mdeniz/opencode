@@ -298,7 +298,7 @@ export const SettingsGeneral: Component = () => {
     { id: "medium", label: language.t("settings.general.voice.model.medium") },
     { id: "large-v3", label: language.t("settings.general.voice.model.large") },
   ]
-  const meter = () => `${Math.max(6, Math.min(100, input.level() * 1200))}%`
+  const meter = () => `${Math.max(4, Math.min(100, input.meter() * 100))}%`
 
   const testInput = async () => {
     setStore("voiceInputTesting", true)
