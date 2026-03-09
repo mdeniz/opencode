@@ -34,7 +34,7 @@ import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
-import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang } from "../../voice"
+import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice } from "../../voice"
 import { Spinner } from "../spinner"
 
 export type PromptProps = {
@@ -260,6 +260,12 @@ export function Prompt(props: PromptProps) {
           setStore2("processing", true)
           const file = voiceFile("input.wav")
           const audio = await Bun.file(file).bytes().catch(() => undefined)
+          await logVoice("input-meta", {
+            size: audio?.length ?? 0,
+            language: voiceLang(),
+            model: "base",
+            file,
+          }).catch(() => undefined)
           if (!audio?.length) {
             setStore2("processing", false)
             toast.show({ variant: "warning", message: "No voice audio captured", duration: 3000 })
@@ -277,7 +283,7 @@ export function Prompt(props: PromptProps) {
           })
             .then(async (x) => {
               const json = (await x.json()) as { text?: string; errors?: { message: string }[] }
-              console.log("voice transcribe", json)
+              await logVoice("transcribe-response", json).catch(() => undefined)
               return json
             })
             .catch(() => undefined)

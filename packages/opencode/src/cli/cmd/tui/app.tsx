@@ -562,7 +562,7 @@ function App() {
       value: "voice.toggle",
       keybind: "voice_toggle",
       slash: {
-        name: "voice",
+        name: "voice-mode",
       },
       onSelect: () => {
         Bus.publish(TuiEvent.CommandExecute, {

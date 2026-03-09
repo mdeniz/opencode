@@ -28,6 +28,16 @@ export async function ensureVoiceDir() {
   return dir
 }
 
+export async function logVoice(name: string, data: unknown) {
+  const dir = await ensureVoiceDir()
+  const file = path.join(dir, `${name}.json`)
+  await Filesystem.writeJson(file, {
+    time: new Date().toISOString(),
+    data,
+  })
+  return file
+}
+
 export function voiceText(style: "light" | "strong", lang: "auto" | "es" | "en") {
   return VOICE_NOTE[style][lang]
 }
