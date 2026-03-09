@@ -72,9 +72,10 @@ export function createVoiceInput(opts?: Opts) {
       sum += item * item
       if (item > peak) peak = item
     }
-    setStore("level", Math.sqrt(sum / data.length))
+    const next = Math.sqrt(sum / data.length)
+    setStore("level", store.level * 0.55 + next * 0.45)
     setStore("peak", peak)
-    const quiet = Math.sqrt(sum / data.length) < 0.015
+    const quiet = next < 0.015
     if (quiet && opts?.onSilence && opts?.silence?.()) {
       if (!silence) silence = window.setTimeout(() => opts.onSilence?.(store.peak), opts.silence?.())
     }

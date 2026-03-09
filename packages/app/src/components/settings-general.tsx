@@ -298,6 +298,7 @@ export const SettingsGeneral: Component = () => {
     { id: "medium", label: language.t("settings.general.voice.model.medium") },
     { id: "large-v3", label: language.t("settings.general.voice.model.large") },
   ]
+  const meter = () => `${Math.max(6, Math.min(100, input.level() * 1200))}%`
 
   const testInput = async () => {
     setStore("voiceInputTesting", true)
@@ -627,14 +628,13 @@ export const SettingsGeneral: Component = () => {
               title={language.t("settings.general.voice.testInput.level.title")}
               description={language.t("settings.general.voice.testInput.level.description")}
             >
-              <div class="flex items-center gap-3 min-w-56">
-                <div class="h-2 flex-1 rounded-full bg-surface border border-border overflow-hidden">
+              <div class="flex items-center gap-3 min-w-56 w-full max-w-72">
+                <div class="h-2.5 flex-1 rounded-full bg-surface border border-border overflow-hidden">
                   <div
-                    class="h-full bg-success transition-all duration-75"
-                    style={{ width: `${Math.max(2, Math.min(100, input.level() * 220))}%` }}
+                    class="h-full rounded-full bg-gradient-to-r from-success via-warning to-danger transition-all duration-75"
+                    style={{ width: meter() }}
                   />
                 </div>
-                <span class="w-12 text-right text-12-regular text-text-weak">{input.level().toFixed(3)}</span>
               </div>
             </SettingsRow>
           </Show>
