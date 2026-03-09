@@ -34,7 +34,7 @@ import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
-import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice } from "../../voice"
+import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice, compactAudio } from "../../voice"
 import { Spinner } from "../spinner"
 
 export type PromptProps = {
@@ -259,12 +259,15 @@ export function Prompt(props: PromptProps) {
           setStore2("recording", false)
           setStore2("processing", true)
           const file = voiceFile("input.wav")
-          const audio = await Bun.file(file).bytes().catch(() => undefined)
+          const clip = voiceFile("input-clip.wav")
+          await compactAudio(file, clip).catch((err) => logVoice("compact-error", { message: err instanceof Error ? err.message : String(err) }))
+          const pick = (await Bun.file(clip).exists()) ? clip : file
+          const audio = await Bun.file(pick).bytes().catch(() => undefined)
           await logVoice("input-meta", {
             size: audio?.length ?? 0,
             language: voiceLang(),
             model: "base",
-            file,
+            file: pick,
           }).catch(() => undefined)
           if (!audio?.length) {
             setStore2("processing", false)

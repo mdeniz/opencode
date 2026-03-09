@@ -47,12 +47,19 @@ export async function recordAudio(file: string) {
   if (!bin) throw new Error("No terminal audio recorder found. Install pw-record or arecord.")
   const args =
     path.basename(bin) === "pw-record"
-      ? [file, "--rate", "16000", "--channels", "1"]
+      ? [file, "--rate", "16000", "--channels", "1", "--format", "s16"]
       : ["-q", "-f", "S16_LE", "-r", "16000", "-c", "1", file]
   return Process.spawn([bin, ...args], {
     stdout: "ignore",
     stderr: "pipe",
   })
+}
+
+export async function compactAudio(input: string, output: string) {
+  const ffmpeg = await Bun.which("ffmpeg")
+  if (!ffmpeg) throw new Error("ffmpeg is required to compact CLI voice recordings.")
+  await Process.run([ffmpeg, "-y", "-i", input, "-ac", "1", "-ar", "16000", "-t", "15", output], { nothrow: true })
+  return output
 }
 
 export function detectLang(text: string) {
