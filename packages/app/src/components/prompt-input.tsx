@@ -1028,6 +1028,13 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   })
   const meter = () => `${Math.max(4, Math.min(100, input.meter() * 100))}%`
   const voiceIcon = () => (player.speaking() ? "stop" : input.running() ? "circle-x" : "speech-bubble")
+  const voiceVariant = () => {
+    if (store.voiceBusy) return "secondary" as const
+    if (player.speaking()) return "ghost" as const
+    if (input.running()) return "primary" as const
+    if (settings.voice.enabled()) return "secondary" as const
+    return "ghost" as const
+  }
   const voiceLabel = () => {
     if (store.voiceBusy) return language.t("prompt.action.voiceProcessing")
     if (player.speaking()) return language.t("prompt.action.voiceStopSpeaking")
@@ -1547,7 +1554,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         data-action="prompt-voice"
                         type="button"
                         icon={voiceIcon()}
-                        variant={player.speaking() || input.running() ? "primary" : settings.voice.enabled() ? "secondary" : "ghost"}
+                        variant={voiceVariant()}
                         class="size-8"
                         style={{
                           opacity: buttonsSpring(),
@@ -1565,7 +1572,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     <Button
                       data-action="prompt-voice"
                       type="button"
-                      variant="primary"
+                      variant={voiceVariant()}
                       class="size-8 p-0"
                       style={{
                         opacity: buttonsSpring(),
@@ -1576,10 +1583,13 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                       tabIndex={store.mode === "normal" ? undefined : -1}
                       aria-label={voiceLabel()}
                     >
-                      <Spinner class="size-4 text-icon-primary" />
+                      <Spinner class="size-4 text-icon-base" />
                     </Button>
                   </Show>
                 </Tooltip>
+              </Show>
+              <Show when={store.voiceBusy}>
+                <div class="px-1.5 text-11-regular text-text-weak whitespace-nowrap">{language.t("prompt.voice.status.processing")}</div>
               </Show>
 
               <Tooltip
