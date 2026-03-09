@@ -298,9 +298,12 @@ export function Prompt(props: PromptProps) {
             return
           }
           await logVoice("transcribe-insert", { text }).catch(() => undefined)
-          input.insertText(text)
-          setStore("prompt", "input", (value) => value + text)
-          input.gotoBufferEnd()
+          input.setText(text)
+          setStore("prompt", "input", text)
+          setStore("prompt", "parts", [])
+          input.cursorOffset = Bun.stringWidth(text)
+          input.getLayoutNode().markDirty()
+          renderer.requestRender()
         },
       },
       {
