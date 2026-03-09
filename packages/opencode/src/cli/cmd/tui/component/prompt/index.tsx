@@ -275,7 +275,11 @@ export function Prompt(props: PromptProps) {
               model: "base",
             }),
           })
-            .then((x) => x.json() as Promise<{ text?: string; errors?: { message: string }[] }>)
+            .then(async (x) => {
+              const json = (await x.json()) as { text?: string; errors?: { message: string }[] }
+              console.log("voice transcribe", json)
+              return json
+            })
             .catch(() => undefined)
           setStore2("processing", false)
           const text = data?.text?.trim()
