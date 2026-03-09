@@ -83,6 +83,7 @@ export function Prompt(props: PromptProps) {
   const [voiceLang, setVoiceLang] = kv.signal<"auto" | "es" | "en">("voice_language", "auto")
   const [voiceStyle, setVoiceStyle] = kv.signal<"light" | "strong">("voice_style", "light")
   const [voiceSend, setVoiceSend] = kv.signal("voice_send", false)
+  const [voiceHands, setVoiceHands] = kv.signal("voice_hands", false)
   const [store2, setStore2] = createStore<{
     recording: boolean
     processing: boolean
@@ -110,6 +111,12 @@ export function Prompt(props: PromptProps) {
     }
     setStore2("speaking", false)
     speak = undefined
+    if (voiceHands()) {
+      await ensureVoiceDir().catch(() => undefined)
+      const file = voiceFile("input.wav")
+      rec = await recordAudio(file).catch(() => undefined)
+      if (rec) setStore2("recording", true)
+    }
   }
 
   function promptModelWarning() {
@@ -358,6 +365,46 @@ export function Prompt(props: PromptProps) {
           toast.show({
             variant: "success",
             message: next ? "Voice auto-send enabled" : "Voice auto-send disabled",
+            duration: 2500,
+          })
+        },
+      },
+      {
+        title: "Voice help",
+        value: "voice.help",
+        category: "Voice",
+        slash: {
+          name: "voice-help",
+        },
+        onSelect: async (x) => {
+          x.clear()
+          await DialogAlert.show(
+            dialog,
+            "Voice help",
+            [
+              "/voice starts or stops voice input",
+              "/voice-stop stops text to speech",
+              "/voice-send toggles auto-submit after transcription",
+              "/voice-lang-auto, /voice-lang-es, /voice-lang-en set transcription language",
+              "/voice-style-light and /voice-style-strong tune spoken response formatting",
+            ].join("\n\n"),
+          )
+        },
+      },
+      {
+        title: voiceHands() ? "Disable hands-free voice" : "Enable hands-free voice",
+        value: "voice.hands",
+        category: "Voice",
+        slash: {
+          name: "voice-hands",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          const next = !voiceHands()
+          setVoiceHands(() => next)
+          toast.show({
+            variant: "success",
+            message: next ? "Hands-free voice enabled" : "Hands-free voice disabled",
             duration: 2500,
           })
         },
@@ -1283,6 +1330,10 @@ export function Prompt(props: PromptProps) {
                     <Show when={voiceSend()}>
                       <text fg={theme.textMuted}>·</text>
                       <text fg={theme.warning}>Auto send</text>
+                    </Show>
+                    <Show when={voiceHands()}>
+                      <text fg={theme.textMuted}>·</text>
+                      <text fg={theme.info}>Hands free</text>
                     </Show>
                   </Show>
                 </box>

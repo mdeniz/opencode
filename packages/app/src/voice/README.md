@@ -55,6 +55,7 @@ Those can build on top of the app experience later.
 - Playback uses `ffmpeg` + `ffplay`.
 - TUI supports a persistent `voice_send` toggle via `/voice-send` to auto-submit the prompt immediately after transcription.
 - TUI also exposes slash commands for voice language and response style: `/voice-lang-auto`, `/voice-lang-es`, `/voice-lang-en`, `/voice-style-light`, `/voice-style-strong`.
+- TUI exposes `/voice-help` and `/voice-hands` for discoverability and a more hands-free loop.
 - Long replies are chunked before TTS to avoid failures on very long text.
 - Mixed-language replies are chunked and language-detected per segment so English and Spanish can be spoken with different voices.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
