@@ -1368,34 +1368,9 @@ export function Prompt(props: PromptProps) {
                       <span style={{ fg: theme.warning, bold: true }}>{local.model.variant.current()}</span>
                     </text>
                   </Show>
-                  <Show when={voice() || store2.recording || store2.processing || store2.speaking}>
+                  <Show when={store2.recording}>
                     <text fg={theme.textMuted}>·</text>
-                    <Switch>
-                      <Match when={store2.recording}>
-                        <text fg={theme.success}>Voice rec</text>
-                      </Match>
-                      <Match when={store2.processing}>
-                        <Spinner color={theme.warning}>Voice</Spinner>
-                      </Match>
-                      <Match when={store2.speaking}>
-                        <text fg={theme.info}>Voice speak</text>
-                      </Match>
-                      <Match when={voice()}>
-                        <text fg={theme.textMuted}>Voice on</text>
-                      </Match>
-                    </Switch>
-                    <Show when={voiceSend()}>
-                      <text fg={theme.textMuted}>·</text>
-                      <text fg={theme.warning}>Auto send</text>
-                    </Show>
-                    <Show when={voiceHands()}>
-                      <text fg={theme.textMuted}>·</text>
-                      <text fg={theme.info}>Hands free</text>
-                    </Show>
-                    <Show when={voiceSilence()}>
-                      <text fg={theme.textMuted}>·</text>
-                      <text fg={theme.success}>Silence stop</text>
-                    </Show>
+                    <text fg={theme.success}>Voice recording</text>
                   </Show>
                 </box>
               </Show>
