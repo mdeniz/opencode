@@ -1038,6 +1038,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       })
       return
     }
+    console.info("voice recording", { size: out.blob.size, type: out.blob.type, peak: out.peak })
     setStore("voiceDraft", language.t("prompt.voice.status.processing"))
     const res = await transcribeVoice({
       server: server.current!.http,
@@ -1052,6 +1053,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       })
       return
     })
+    console.info("voice transcription", res)
     setStore("voiceDraft", "")
     if (!res?.text) return
     if (!appendVoice(res.text)) return

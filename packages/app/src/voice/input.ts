@@ -132,7 +132,7 @@ export function createVoiceInput(opts?: Opts) {
   }
 
   const record = async (ms = 5000) => {
-    const ok = await start()
+    const ok = stream ? true : await start()
     if (!ok || !stream) return
     if (typeof MediaRecorder === "undefined") {
       setStore("error", "unsupported")
