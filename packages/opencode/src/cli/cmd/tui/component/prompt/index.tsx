@@ -274,8 +274,11 @@ export function Prompt(props: PromptProps) {
             toast.show({ variant: "warning", message: "No voice audio captured", duration: 3000 })
             return
           }
-          const data = await (sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client
-            .post({
+          const fn = (sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client.post.bind(
+            (sdk.client as unknown as { client: { post: (input: unknown) => Promise<unknown> } }).client,
+          )
+          const data = await fn(
+            {
               url: `${sdk.url}/voice/transcribe?mode=auto`,
               body: {
                 audio: Buffer.from(audio).toString("base64"),
@@ -286,7 +289,8 @@ export function Prompt(props: PromptProps) {
               headers: { "content-type": "application/json" },
               responseStyle: "data",
               parseAs: "json",
-            })
+            },
+          )
             .then(async (x: unknown) => {
               await logVoice("transcribe-response", { ok: true, json: x }).catch(() => undefined)
               return x as { text?: string; errors?: { message: string }[] } | undefined
