@@ -34,6 +34,8 @@ import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
+import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang } from "../../voice"
+import { Spinner } from "../spinner"
 
 export type PromptProps = {
   sessionID?: string
@@ -77,6 +79,37 @@ export function Prompt(props: PromptProps) {
   const renderer = useRenderer()
   const { theme, syntax } = useTheme()
   const kv = useKV()
+  const [voice, setVoice] = kv.signal("voice_mode", false)
+  const [voiceLang] = kv.signal<"auto" | "es" | "en">("voice_language", "auto")
+  const [voiceStyle] = kv.signal<"light" | "strong">("voice_style", "light")
+  const [store2, setStore2] = createStore<{
+    recording: boolean
+    processing: boolean
+    speaking: boolean
+  }>({
+    recording: false,
+    processing: false,
+    speaking: false,
+  })
+  let rec: { kill(signal?: NodeJS.Signals | number): boolean; exited: Promise<number> } | undefined
+  let speak: { kill(signal?: NodeJS.Signals | number): boolean; exited: Promise<number> } | undefined
+  let last = ""
+
+  async function speakReply(text: string) {
+    const chunks = splitLang(text)
+    if (!chunks.length) return
+    setStore2("speaking", true)
+    for (const [i, chunk] of chunks.entries()) {
+      const file = voiceFile(`reply-${i}.wav`)
+      speak = await speakText(chunk.text, file).catch(() => undefined)
+      if (!speak) break
+      const code = await speak.exited.catch(() => 1)
+      if (code !== 0) break
+      if (!store2.speaking) break
+    }
+    setStore2("speaking", false)
+    speak = undefined
+  }
 
   function promptModelWarning() {
     toast.show({
@@ -191,6 +224,83 @@ export function Prompt(props: PromptProps) {
           if (!input.focused) return
           submit()
           dialog.clear()
+        },
+      },
+      {
+        title: store2.recording ? "Stop voice input" : "Start voice input",
+        value: "voice.toggle",
+        keybind: "voice_toggle",
+        category: "Voice",
+        slash: {
+          name: "voice",
+        },
+        onSelect: async (dialog) => {
+          dialog.clear()
+          if (store2.processing) return
+          if (store2.speaking) {
+            speak?.kill()
+            setStore2("speaking", false)
+            return
+          }
+          if (!store2.recording) {
+            await ensureVoiceDir().catch(() => undefined)
+            const file = voiceFile("input.wav")
+            rec = await recordAudio(file).catch((err) => {
+              toast.show({ variant: "error", message: err instanceof Error ? err.message : String(err), duration: 4000 })
+              return undefined
+            })
+            if (!rec) return
+            setStore2("recording", true)
+            setVoice(() => true)
+            return
+          }
+          rec?.kill("SIGINT")
+          setStore2("recording", false)
+          setStore2("processing", true)
+          const file = voiceFile("input.wav")
+          await rec?.exited.catch(() => 1)
+          const audio = await Bun.file(file).bytes().catch(() => undefined)
+          if (!audio?.length) {
+            setStore2("processing", false)
+            toast.show({ variant: "warning", message: "No voice audio captured", duration: 3000 })
+            return
+          }
+          const data = await fetch(`${sdk.url}/voice/transcribe?mode=auto`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              audio: Buffer.from(audio).toString("base64"),
+              mime: "audio/wav",
+              language: voiceLang(),
+              model: "base",
+            }),
+          })
+            .then((x) => x.json() as Promise<{ text?: string; errors?: { message: string }[] }>)
+            .catch(() => undefined)
+          setStore2("processing", false)
+          const text = data?.text?.trim()
+          if (!text) {
+            toast.show({ variant: "warning", message: data?.errors?.[0]?.message || "No speech recognized", duration: 4000 })
+            return
+          }
+          input.insertText(text)
+          setStore("prompt", "input", (value) => value + text)
+          input.gotoBufferEnd()
+        },
+      },
+      {
+        title: "Stop speaking",
+        value: "voice.stop_speaking",
+        keybind: "voice_stop_speaking",
+        category: "Voice",
+        slash: {
+          name: "voice-stop",
+        },
+        enabled: store2.speaking,
+        onSelect: (dialog) => {
+          dialog.clear()
+          setStore2("speaking", false)
+          speak?.kill()
         },
       },
       {
@@ -613,6 +723,8 @@ export function Prompt(props: PromptProps) {
           })),
       })
     } else {
+      const voiced = voice() && selectedModel
+      const note = voiced ? `${voiceText(voiceStyle(), voiceLang())}\n\n` : ""
       sdk.client.session
         .prompt({
           sessionID,
@@ -625,7 +737,7 @@ export function Prompt(props: PromptProps) {
             {
               id: Identifier.ascending("part"),
               type: "text",
-              text: inputText,
+              text: note + inputText,
             },
             ...nonTextParts.map((x) => ({
               id: Identifier.ascending("part"),
@@ -776,6 +888,22 @@ export function Prompt(props: PromptProps) {
         minAlpha: 0.3,
       }),
     }
+  })
+
+  createEffect(() => {
+    if (!voice()) return
+    if (!props.sessionID) return
+    const msg = sync.data.message[props.sessionID]?.findLast((x) => x.role === "assistant" && typeof x.time.completed === "number")
+    if (!msg || msg.id === last || store2.speaking) return
+    const parts = sync.data.part[msg.id] ?? []
+    const text = parts
+      .filter((x): x is Extract<(typeof parts)[number], { type: "text" }> => x.type === "text" && !x.synthetic && !x.ignored)
+      .map((x) => x.text)
+      .join(" ")
+      .trim()
+    if (!text) return
+    last = msg.id
+    queueMicrotask(() => void speakReply(text))
   })
 
   return (
@@ -1011,6 +1139,23 @@ export function Prompt(props: PromptProps) {
                     <text>
                       <span style={{ fg: theme.warning, bold: true }}>{local.model.variant.current()}</span>
                     </text>
+                  </Show>
+                  <Show when={voice() || store2.recording || store2.processing || store2.speaking}>
+                    <text fg={theme.textMuted}>·</text>
+                    <Switch>
+                      <Match when={store2.recording}>
+                        <text fg={theme.success}>Voice rec</text>
+                      </Match>
+                      <Match when={store2.processing}>
+                        <Spinner color={theme.warning}>Voice</Spinner>
+                      </Match>
+                      <Match when={store2.speaking}>
+                        <text fg={theme.info}>Voice speak</text>
+                      </Match>
+                      <Match when={voice()}>
+                        <text fg={theme.textMuted}>Voice on</text>
+                      </Match>
+                    </Switch>
                   </Show>
                 </box>
               </Show>

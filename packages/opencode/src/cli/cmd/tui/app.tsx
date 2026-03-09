@@ -38,6 +38,7 @@ import { ArgsProvider, useArgs, type Args } from "./context/args"
 import open from "open"
 import { writeHeapSnapshot } from "v8"
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
+import { Bus } from "@/bus"
 import { TuiConfigProvider } from "./context/tui-config"
 import { TuiConfig } from "@/config/tui"
 
@@ -555,6 +556,34 @@ function App() {
         dialog.replace(() => <DialogHelp />)
       },
       category: "System",
+    },
+    {
+      title: "Toggle voice mode",
+      value: "voice.toggle",
+      keybind: "voice_toggle",
+      slash: {
+        name: "voice",
+      },
+      onSelect: () => {
+        Bus.publish(TuiEvent.CommandExecute, {
+          command: "voice.toggle",
+        })
+      },
+      category: "Voice",
+    },
+    {
+      title: "Stop speaking",
+      value: "voice.stop_speaking",
+      keybind: "voice_stop_speaking",
+      slash: {
+        name: "voice-stop",
+      },
+      onSelect: () => {
+        Bus.publish(TuiEvent.CommandExecute, {
+          command: "voice.stop_speaking",
+        })
+      },
+      category: "Voice",
     },
     {
       title: "Open docs",

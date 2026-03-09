@@ -817,6 +817,8 @@ export namespace Config {
       input_clear: z.string().optional().default("ctrl+c").describe("Clear input field"),
       input_paste: z.string().optional().default("ctrl+v").describe("Paste from clipboard"),
       input_submit: z.string().optional().default("return").describe("Submit input"),
+      voice_toggle: z.string().optional().default("ctrl+shift+v").describe("Start or stop CLI voice recording"),
+      voice_stop_speaking: z.string().optional().default("ctrl+shift+.").describe("Stop CLI text to speech playback"),
       input_newline: z
         .string()
         .optional()

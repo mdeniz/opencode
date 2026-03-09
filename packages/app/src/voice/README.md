@@ -47,6 +47,14 @@ Those can build on top of the app experience later.
 - The local default is now `base`, which is the best latency/quality balance we measured locally.
 - On this machine, changing input gain between roughly `0.1x` and `2.0x` did not materially change `base` recognition quality on the same sample; timing and transcript stayed almost identical.
 - In practice, short phrase cutoffs and language choice matter more than simple volume changes.
+
+## CLI/TUI voice mode
+
+- The CLI/TUI reuses the same `/voice/transcribe` backend route.
+- Recording uses local terminal audio tools (`pw-record` or `arecord`).
+- Playback uses `ffmpeg` + `ffplay`.
+- Long replies are chunked before TTS to avoid failures on very long text.
+- Mixed-language replies are chunked and language-detected per segment so English and Spanish can be spoken with different voices.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.
 - Browser speech recognition APIs do not expose a standard way to bind recognition to a specific microphone, so the microphone picker is currently advisory only.
 - Browser speech synthesis also does not provide reliable speaker routing. True output routing would require an `HTMLAudioElement.setSinkId()` pipeline or desktop-native support.

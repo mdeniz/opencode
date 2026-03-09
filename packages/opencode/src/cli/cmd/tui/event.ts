@@ -25,6 +25,8 @@ export const TuiEvent = {
           "prompt.clear",
           "prompt.submit",
           "agent.cycle",
+          "voice.toggle",
+          "voice.stop_speaking",
         ]),
         z.string(),
       ]),
