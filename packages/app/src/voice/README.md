@@ -53,6 +53,7 @@ Those can build on top of the app experience later.
 - The CLI/TUI reuses the same `/voice/transcribe` backend route.
 - Recording uses local terminal audio tools (`pw-record` or `arecord`).
 - Playback uses `ffmpeg` + `ffplay`.
+- TUI supports a persistent `voice_send` toggle via `/voice-send` to auto-submit the prompt immediately after transcription.
 - Long replies are chunked before TTS to avoid failures on very long text.
 - Mixed-language replies are chunked and language-detected per segment so English and Spanish can be spoken with different voices.
 - On the web, `enumerateDevices()` can list `audioinput` and `audiooutput` devices after permission is granted.

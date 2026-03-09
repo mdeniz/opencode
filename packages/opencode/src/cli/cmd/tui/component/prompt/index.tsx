@@ -82,6 +82,7 @@ export function Prompt(props: PromptProps) {
   const [voice, setVoice] = kv.signal("voice_mode", false)
   const [voiceLang] = kv.signal<"auto" | "es" | "en">("voice_language", "auto")
   const [voiceStyle] = kv.signal<"light" | "strong">("voice_style", "light")
+  const [voiceSend, setVoiceSend] = kv.signal("voice_send", false)
   const [store2, setStore2] = createStore<{
     recording: boolean
     processing: boolean
@@ -325,6 +326,7 @@ export function Prompt(props: PromptProps) {
           input.cursorOffset = Bun.stringWidth(text)
           input.getLayoutNode().markDirty()
           renderer.requestRender()
+          if (voiceSend()) submit()
         },
       },
       {
@@ -340,6 +342,24 @@ export function Prompt(props: PromptProps) {
           dialog.clear()
           setStore2("speaking", false)
           speak?.kill()
+        },
+      },
+      {
+        title: voiceSend() ? "Disable voice auto-send" : "Enable voice auto-send",
+        value: "voice.send",
+        category: "Voice",
+        slash: {
+          name: "voice-send",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          const next = !voiceSend()
+          setVoiceSend(() => next)
+          toast.show({
+            variant: "success",
+            message: next ? "Voice auto-send enabled" : "Voice auto-send disabled",
+            duration: 2500,
+          })
         },
       },
       {
