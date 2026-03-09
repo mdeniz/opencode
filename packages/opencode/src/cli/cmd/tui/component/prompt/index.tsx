@@ -34,7 +34,7 @@ import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
 import { DialogSkill } from "../dialog-skill"
-import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice, compactAudio } from "../../voice"
+import { voiceFile, recordAudio, speakText, voiceText, ensureVoiceDir, splitLang, logVoice, compactAudio, watch } from "../../voice"
 import { Spinner } from "../spinner"
 
 export type PromptProps = {
@@ -84,6 +84,8 @@ export function Prompt(props: PromptProps) {
   const [voiceStyle, setVoiceStyle] = kv.signal<"light" | "strong">("voice_style", "light")
   const [voiceSend, setVoiceSend] = kv.signal("voice_send", false)
   const [voiceHands, setVoiceHands] = kv.signal("voice_hands", false)
+  const [voiceSilence, setVoiceSilence] = kv.signal("voice_silence", true)
+  const [voiceSilenceMs, setVoiceSilenceMs] = kv.signal("voice_silence_ms", 2200)
   const [store2, setStore2] = createStore<{
     recording: boolean
     processing: boolean
@@ -96,6 +98,7 @@ export function Prompt(props: PromptProps) {
   let rec: { kill(signal?: NodeJS.Signals | number): boolean; exited: Promise<number> } | undefined
   let speak: { kill(signal?: NodeJS.Signals | number): boolean; exited: Promise<number> } | undefined
   let last = ""
+  let stop: (() => void) | undefined
 
   async function speakReply(text: string) {
     const chunks = splitLang(text)
@@ -260,8 +263,18 @@ export function Prompt(props: PromptProps) {
             if (!rec) return
             setStore2("recording", true)
             setVoice(() => true)
+            if (voiceSilence()) {
+              stop = watch(file, voiceSilenceMs(), () => {
+                stop?.()
+                stop = undefined
+                if (!store2.recording) return
+                queueMicrotask(() => command.trigger("voice.toggle"))
+              })
+            }
             return
           }
+          stop?.()
+          stop = undefined
           rec?.kill("SIGINT")
           await rec?.exited.catch(() => 1)
           setStore2("recording", false)
@@ -367,6 +380,50 @@ export function Prompt(props: PromptProps) {
             message: next ? "Voice auto-send enabled" : "Voice auto-send disabled",
             duration: 2500,
           })
+        },
+      },
+      {
+        title: voiceSilence() ? "Disable voice silence stop" : "Enable voice silence stop",
+        value: "voice.silence",
+        category: "Voice",
+        slash: {
+          name: "voice-silence",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          const next = !voiceSilence()
+          setVoiceSilence(() => next)
+          toast.show({
+            variant: "success",
+            message: next ? "Voice silence stop enabled" : "Voice silence stop disabled",
+            duration: 2500,
+          })
+        },
+      },
+      {
+        title: "Voice silence timeout: 2200ms",
+        value: "voice.silence.2200",
+        category: "Voice",
+        slash: {
+          name: "voice-silence-2200",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceSilenceMs(() => 2200)
+          toast.show({ variant: "success", message: "Voice silence timeout set to 2200ms", duration: 2500 })
+        },
+      },
+      {
+        title: "Voice silence timeout: 3000ms",
+        value: "voice.silence.3000",
+        category: "Voice",
+        slash: {
+          name: "voice-silence-3000",
+        },
+        onSelect: (dialog) => {
+          dialog.clear()
+          setVoiceSilenceMs(() => 3000)
+          toast.show({ variant: "success", message: "Voice silence timeout set to 3000ms", duration: 2500 })
         },
       },
       {
@@ -1334,6 +1391,10 @@ export function Prompt(props: PromptProps) {
                     <Show when={voiceHands()}>
                       <text fg={theme.textMuted}>·</text>
                       <text fg={theme.info}>Hands free</text>
+                    </Show>
+                    <Show when={voiceSilence()}>
+                      <text fg={theme.textMuted}>·</text>
+                      <text fg={theme.success}>Silence {voiceSilenceMs()}ms</text>
                     </Show>
                   </Show>
                 </box>

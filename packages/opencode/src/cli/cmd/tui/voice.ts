@@ -62,6 +62,23 @@ export async function compactAudio(input: string, output: string) {
   return output
 }
 
+export function watch(file: string, ms: number, cb: () => void) {
+  const loop = setInterval(async () => {
+    const ffmpeg = await Bun.which("ffmpeg")
+    if (!ffmpeg) return
+    const out = await Process.run(
+      [ffmpeg, "-i", file, "-af", "silencedetect=noise=-35dB:d=0.3", "-f", "null", "-"],
+      { nothrow: true },
+    ).catch(() => undefined)
+    const text = out?.stderr.toString() || ""
+    const hit = text.match(/silence_end: ([0-9.]+) \| silence_duration: ([0-9.]+)/g)?.at(-1)
+    if (!hit) return
+    const dur = Number(hit.match(/silence_duration: ([0-9.]+)/)?.[1] || 0) * 1000
+    if (dur >= ms) cb()
+  }, 600)
+  return () => clearInterval(loop)
+}
+
 export function detectLang(text: string) {
   const ascii = text.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
   const es = /(\b(el|la|los|las|de|que|para|con|una|uno|como|esto|esta|estoy|puedo|quiero|gracias)\b|[¿¡ñáéíóú])/i.test(text)
