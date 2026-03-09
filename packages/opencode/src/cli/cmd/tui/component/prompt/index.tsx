@@ -1394,7 +1394,7 @@ export function Prompt(props: PromptProps) {
                     </Show>
                     <Show when={voiceSilence()}>
                       <text fg={theme.textMuted}>·</text>
-                      <text fg={theme.success}>Silence {voiceSilenceMs()}ms</text>
+                      <text fg={theme.success}>Silence stop</text>
                     </Show>
                   </Show>
                 </box>
