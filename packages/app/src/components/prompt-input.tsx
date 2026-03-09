@@ -454,6 +454,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const appendVoice = (text: string) => {
     const next = text.trim()
     if (!next) return false
+    console.info("appendVoice:start", { next, current: prompt.current() })
     const parts = prompt.current()
     const imgs = parts.filter((part): part is ImageAttachmentPart => part.type === "image")
     const input = parts.filter((part) => part.type !== "image")
@@ -469,6 +470,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const len = promptLength(items)
     mirror.input = true
     prompt.set([...items, ...imgs], len)
+    console.info("appendVoice:set", { items: [...items, ...imgs], len })
     requestAnimationFrame(() => {
       editorRef.focus()
       setCursorPosition(editorRef, len)
